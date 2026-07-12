@@ -449,15 +449,13 @@ function doGet(e) {
     if (op === "addAttendance") {
       var attSheet = ss.getSheetByName("Attendance") || ss.insertSheet("Attendance");
       attSheet.appendRow([e.parameter.id, e.parameter.name, e.parameter.date, e.parameter.time, e.parameter.actionType, e.parameter.method, e.parameter.status, e.parameter.reason]);
-      return ContentService.createTextOutput(JSON.stringify({success: true}))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
     }
     
     if (op === "addStaff") {
       var staffSheet = ss.getSheetByName("Staff") || ss.insertSheet("Staff");
       staffSheet.appendRow([e.parameter.id, e.parameter.name, e.parameter.type, e.parameter.token || ""]);
-      return ContentService.createTextOutput(JSON.stringify({success: true}))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
     }
     
     if (op === "updateToken") {
@@ -469,8 +467,7 @@ function doGet(e) {
           break;
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({success: true}))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
     }
     
     if (op === "deleteStaff") {
@@ -482,8 +479,7 @@ function doGet(e) {
           break;
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({success: true}))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
     }
     
     if (op === "deleteAttendance") {
@@ -495,8 +491,7 @@ function doGet(e) {
           break;
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({success: true}))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
     }
     
     if (op === "resetSystem") {
@@ -509,8 +504,7 @@ function doGet(e) {
       ss.insertSheet("Staff").appendRow(["ID", "Name", "Type", "Token"]);
       ss.insertSheet("Attendance").appendRow(["ID", "Name", "Date", "Time", "Action", "Method", "Status", "Reason"]);
       ss.insertSheet("Config").appendRow(["Key", "Value"]);
-      return ContentService.createTextOutput(JSON.stringify({success: true}))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
     }
   } catch(err) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
@@ -717,7 +711,7 @@ function doGet(e) {
                         
                         <!-- التبويبات للتبديل بين الإدخال اليدوي والاستيراد من إكسل -->
                         <div class="flex border-b border-slate-100 pb-1">
-                            <button onclick="switchInsertTab('manual')" id="tab-btn-manual" class="flex-1 text-center pb-2 text-xs font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">إدخال يدوي ✍️</button>
+                            <button onclick="switchInsertTab('manual')" id="tab-btn-manual" class="flex-1 text-center pb-2 text-xs font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">إدخل يدوي ✍️</button>
                             <button onclick="switchInsertTab('excel')" id="tab-btn-excel" class="flex-1 text-center pb-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">رفع ملف إكسل 📊</button>
                         </div>
 
@@ -966,6 +960,9 @@ function doGet(e) {
         let SCHOOL_LNG = 46.6753;
         let SCHOOL_RADIUS = 100;
 
+        // الرابط السحابي الثابت والخاص بالابتدائية الثامنة والعشرون بالقريات ليعمل تلقائياً على جميع الأجهزة
+        const HARDCODED_SHEET_URL = "https://script.google.com/macros/s/AKfycbz5wBcArZbI37WK9d9xgqSX9r5dyHGm3OzPUath5WzkvPUbCmA0Fzkv2Q3ek_9kJKY/exec";
+
         // الحالة التشغيلية الافتراضية للتطبيق
         const defaultState = {
             activeRole: 'teacher',
@@ -975,7 +972,7 @@ function doGet(e) {
             useIncorrectDevice: false,
             currentInsertTab: 'manual',
             adminPin: '2026',
-            googleSheetUrl: '', // رابط برمجية جوجل للربط السحابي اللحظي
+            googleSheetUrl: HARDCODED_SHEET_URL, // تعيين الرابط كافتراضي لجميع الجوالات تلقائياً
             
             schoolLocation: {
                 lat: 24.7136,
@@ -1029,6 +1026,12 @@ function doGet(e) {
             SCHOOL_LAT = state.schoolLocation.lat;
             SCHOOL_LNG = state.schoolLocation.lng;
             SCHOOL_RADIUS = state.schoolLocation.radius;
+
+            // قوة الإجبار: إذا كان الرابط السحابي فارغاً في الذاكرة المحلية للجوال الجديد، يتم شحنه بالرابط الافتراضي فوراً لضمان الاتصال
+            if (!state.googleSheetUrl || state.googleSheetUrl.trim() === "") {
+                state.googleSheetUrl = HARDCODED_SHEET_URL;
+                saveState();
+            }
 
             // محاولة جلب البيانات من سحابة جداول جوجل إذا كانت مهيئة ومربوطة
             if (state.googleSheetUrl) {
@@ -1141,7 +1144,7 @@ function doGet(e) {
                     } else if (data && data.success === false) {
                         showToast(`🛑 فشل الاتصال: ${data.error}`, "warning");
                     } else {
-                        showToast("⚠️ استجاب الخادم ولكن بتنسيق غير صحيح؛ تأكدي من صحة كود Apps Script المرفوع.", "warning");
+                        showToast("⚠️ استجاب الخادم ولكن بتنسيق غير صحيح； تأكدي من صحة كود Apps Script المرفوع.", "warning");
                     }
                 })
                 .catch(err => {
@@ -1516,7 +1519,7 @@ function doGet(e) {
                         console.error(err);
                         delete state.staff[id];
                         saveState();
-                        showToast(`🗑️ تم الحذف محلياً؛ واجهنا مشكلة اتصال سحابي بالخادم.`, "warning");
+                        showToast(`🗑️ تم الحذف محلياً； واجهنا مشكلة اتصال سحابي بالخادم.`, "warning");
                         closeConfirmModal();
                         renderAdminDashboard();
                     });
@@ -2994,7 +2997,7 @@ function doGet(e) {
                         </div>
                         <div class="school-info" style="text-align: left;">
                             فترة البحث: <strong>من ${startStr} إلى ${endStr}</strong><br>
-                            fئة البحث: <strong>${reportType === 'all-range' ? 'كافة المعلمات' : 'بحث فردي تفصيلي'}</strong><br>
+                            فئة البحث: <strong>${reportType === 'all-range' ? 'كافة المعلمات' : 'بحث فردي تفصيلي'}</strong><br>
                         </div>
                     </div>
 
