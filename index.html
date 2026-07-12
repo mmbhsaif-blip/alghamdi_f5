@@ -1,0 +1,3077 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام الحضور والانصراف الذكي - الابتدائية الثامنة والعشرون بالقريات</title>
+    <!-- تضمين خط Cairo الأنيق لدعم اللغة العربية بشكل احترافي -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- مكتبة Tailwind CSS للتصميم المتجاوب والحديث -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- مكتبة أيقونات FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- مكتبة قراءة وتحليل وكتابة ملفات الإكسل (SheetJS) مباشرة من المتصفح -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        },
+                        school: {
+                            navy: '#1e293b',
+                            gold: '#d97706',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800 antialiased selection:bg-brand-500 selection:text-white flex flex-col justify-between">
+
+    <!-- بار التنقل العلوي المحدث والمصمم للوصول الفوري لبوابة الوكيلة -->
+    <header id="public-header" class="bg-school-navy text-white shadow-md border-b border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-brand-500 p-2 rounded-lg shadow-inner flex items-center justify-center">
+                    <i class="fa-solid fa-school-flag text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-extrabold tracking-tight">نظام الحضور والانصراف الذكي</h1>
+                    <p class="text-xs sm:text-sm text-brand-100 font-extrabold mt-1">الابتدائية الثامنة والعشرون بالقريات - وكيلة المدرسة الأستاذة فوزية الغامدي</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- مؤشر الاتصال السحابي بجوجل -->
+                <span id="header-sync-status" class="text-[10px] bg-red-600/20 text-red-100 border border-red-500/30 px-2 py-1 rounded-full font-semibold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                    <span>محلي (غير متصل بجوجل)</span>
+                </span>
+                <!-- زر الدخول الإداري العلوي المباشر -->
+                <button onclick="openAdminLoginModal()" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-2 rounded-xl border border-indigo-500/20 shadow-lg flex items-center gap-1.5 transition-all active:scale-95">
+                    <i class="fa-solid fa-user-lock text-[10px]"></i>
+                    <span>بوابة الوكيلة 🔐</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- شريط محاكاة الظروف التشغيلية - يظهر فقط للوكيلة لأغراض الاختبار -->
+    <section id="simulation-bar" class="bg-amber-50 border-b border-amber-200/60 px-4 py-3 hidden">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-sm">
+            <div class="flex items-center gap-2 text-amber-800 font-medium">
+                <i class="fa-solid fa-circle-nodes text-amber-600 animate-pulse"></i>
+                <span>محاكي بيئة الاختبار لربط الأجهزة والمعاينة:</span>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- محاكاة الموقع الجغرافي للموظفة -->
+                <div class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg shadow-sm border border-amber-200 text-xs">
+                    <span class="text-[11px] text-slate-500 font-semibold">موقع المعلمة:</span>
+                    <select id="sim-gps" onchange="updateSimulationGPS()" class="bg-transparent font-bold text-slate-800 outline-none cursor-pointer">
+                        <option value="inside">📍 داخل نطاق المدرسة</option>
+                        <option value="outside">🚗 خارج نطاق المدرسة (1.2 كم)</option>
+                    </select>
+                </div>
+
+                <!-- محاكاة وقت التحضير -->
+                <div class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg shadow-sm border border-amber-200 text-xs">
+                    <span class="text-[11px] text-slate-500 font-semibold">وقت الجوال المحاكى:</span>
+                    <select id="sim-time-select" onchange="updateSimulatedTimePreset()" class="bg-transparent font-bold text-slate-800 outline-none cursor-pointer">
+                        <option value="current">🕒 الوقت الفعلي الحالي</option>
+                        <option value="06:30">☀️ 06:30 ص (دوام طبيعي مبكر)</option>
+                        <option value="07:15">🚨 07:15 ص (متأخرة 30 دقيقة)</option>
+                        <option value="12:30">🕒 12:30 م (انصراف مبكر)</option>
+                        <option value="13:15">✅ 01:15 م (انصراف نظامي)</option>
+                    </select>
+                </div>
+
+                <!-- محاكاة حالة الإنترنت والشبكة -->
+                <div class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg shadow-sm border border-amber-200 text-xs">
+                    <button onclick="toggleNetworkSim()" id="sim-network" class="flex items-center gap-1.5 font-bold text-emerald-600 transition-colors">
+                        <i class="fa-solid fa-wifi text-emerald-500"></i>
+                        <span>شبكة متصلة</span>
+                    </button>
+                </div>
+
+                <!-- محاكاة استخدام جهاز مختلف -->
+                <div class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg shadow-sm border border-amber-200 text-xs">
+                    <button onclick="changeSimDevice()" id="sim-device" class="flex items-center gap-1.5 font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
+                        <i class="fa-solid fa-fingerprint"></i>
+                        <span>جوال المعلمة الأصلي</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- المحتوى الرئيسي للمشروع -->
+    <main class="flex-grow flex flex-col justify-between">
+
+        <!-- 1. واجهة المعلمة (Teacher Portal) - محاكاة شاشة الجوال -->
+        <div id="view-teacher" class="flex-grow flex items-center justify-center py-8 px-4">
+            <div class="w-full max-w-sm">
+                <!-- هيكل الجوال الذكي الخارجي -->
+                <div class="bg-slate-900 p-4 rounded-[40px] shadow-2xl border-4 border-slate-700 relative overflow-hidden">
+                    <!-- كاميرا وسماعة الجوال العلوية -->
+                    <div class="absolute top-2 left-1/2 -translate-x-1/2 w-32 h-5 bg-slate-900 rounded-full z-20 flex items-center justify-center">
+                        <div class="w-3 h-3 bg-slate-800 rounded-full mr-2"></div>
+                        <div class="w-12 h-1 bg-slate-800 rounded-full"></div>
+                    </div>
+
+                    <!-- الشاشة الداخلية للجوال -->
+                    <div class="bg-white rounded-[32px] overflow-hidden pt-6 pb-4 px-5 min-h-[560px] flex flex-col justify-between text-slate-800 relative">
+                        
+                        <!-- شريط مؤشرات الهاتف العلوي -->
+                        <div class="flex justify-between items-center text-[11px] text-slate-500 font-semibold mb-4 px-2">
+                            <span id="mobile-clock">07:00 ص</span>
+                            <div class="flex items-center gap-1">
+                                <i id="mobile-wifi-icon" class="fa-solid fa-wifi text-emerald-500"></i>
+                                <i class="fa-solid fa-battery-three-quarters"></i>
+                            </div>
+                        </div>
+
+                        <!-- المحتوى التفاعلي لبوابة الموظفة -->
+                        <div class="flex-grow flex flex-col justify-start">
+                            <!-- شعار المؤسسة التعليمية -->
+                            <div class="text-center mb-6">
+                                <div class="inline-flex p-2.5 bg-emerald-50 rounded-2xl text-emerald-600 mb-2 shadow-sm border border-emerald-100">
+                                    <i class="fa-solid fa-fingerprint text-2xl"></i>
+                                </div>
+                                <h3 class="text-base font-bold text-slate-800 leading-tight">بوابة التحضير الآمنة</h3>
+                                <p class="text-[10px] text-slate-400 font-medium">نظام المتابعة البديل لمنسوبات المدرسة</p>
+                            </div>
+
+                            <!-- الحقول والبيانات المطلوبة -->
+                            <div class="space-y-4">
+                                <div class="space-y-1">
+                                    <label class="block text-xs font-bold text-slate-600 mr-1">رقم السجل المدني / الهوية</label>
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">
+                                            <i class="fa-solid fa-id-card text-sm"></i>
+                                        </span>
+                                        <input type="text" id="teacher-id-input" oninput="onTeacherIdChange()" class="w-full pl-3 pr-9 py-2 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-center font-semibold text-sm transition-all placeholder:text-slate-300" placeholder="اكتب السجل المدني">
+                                    </div>
+                                    <p id="teacher-name-preview" class="text-[11px] text-brand-600 font-bold mt-1 text-center min-h-[1rem]"></p>
+                                </div>
+
+                                <!-- مؤشرات التحقق الذاتية -->
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2 shadow-sm">
+                                    <span class="text-[10px] uppercase tracking-wider text-slate-400 font-bold block mb-1">فحص حماية التحضير التلقائي:</span>
+                                    
+                                    <!-- مؤشر الموقع الجغرافي GPS -->
+                                    <div class="flex items-center justify-between text-xs">
+                                        <div class="flex items-center gap-2">
+                                            <div id="badge-gps-icon" class="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[9px]">
+                                                <i class="fa-solid fa-location-dot"></i>
+                                            </div>
+                                            <span class="font-semibold text-slate-600">نطاق المدرسة (GPS)</span>
+                                        </div>
+                                        <span id="badge-gps-text" class="text-[10px] font-bold text-emerald-600">داخل المدرسة</span>
+                                    </div>
+                                    <div id="teacher-school-coords-text" class="text-[9px] text-slate-400 font-semibold pr-7 text-right">
+                                        قيود الإحداثيات: جاري التحميل...
+                                    </div>
+
+                                    <!-- مؤشر الهاتف المسجل والتوكن التشفيري -->
+                                    <div class="flex items-center justify-between text-xs">
+                                        <div class="flex items-center gap-2">
+                                            <div id="badge-device-icon" class="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[9px]">
+                                                <i class="fa-solid fa-mobile-button"></i>
+                                            </div>
+                                            <span class="font-semibold text-slate-600">بصمة الهاتف والجهاز</span>
+                                        </div>
+                                        <span id="badge-device-text" class="text-[10px] font-bold text-emerald-600">آمن ومطابق</span>
+                                    </div>
+                                </div>
+
+                                <!-- أزرار الإجراءات للتحضير السريع والإنصراف -->
+                                <div class="grid grid-cols-2 gap-3 pt-2">
+                                    <button onclick="handleCheckIn('حضور')" class="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md active:scale-95 transition-all text-xs flex flex-col items-center justify-center gap-1">
+                                        <i class="fa-solid fa-sun text-base animate-pulse"></i>
+                                        <span>تسجيل حضور</span>
+                                    </button>
+                                    <button onclick="handleCheckIn('انصراف')" class="group relative overflow-hidden bg-slate-700 hover:bg-slate-800 text-white font-bold py-2.5 px-4 rounded-xl shadow-md active:scale-95 transition-all text-xs flex flex-col items-center justify-center gap-1">
+                                        <i class="fa-solid fa-moon text-base"></i>
+                                        <span>تسجيل انصراف</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- منطقة إشعارات وحالات الاستجابة المحاكية للجوال -->
+                        <div class="mt-3">
+                            <div id="mobile-response" class="hidden p-2.5 rounded-xl text-center text-xs font-semibold leading-relaxed animate-fade-in flex flex-col gap-2"></div>
+                        </div>
+
+                    </div> <!-- نهاية الشاشة الداخلية للجوال -->
+                </div> <!-- نهاية هيكل الجوال الذكي الخارجي -->
+            </div>
+        </div>
+
+        <!-- 2. واجهة الإدارة والمراقبة الشاملة (Admin Dashboard) - تظهر للوكيلة فقط بعد التحقق -->
+        <div id="view-admin" class="max-w-7xl mx-auto px-4 py-8 space-y-6 w-full hidden animate-fade-in">
+            
+            <!-- ترويسة لوحة التحكم -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-600 p-3 rounded-xl text-white">
+                        <i class="fa-solid fa-sliders text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">بوابة المراقبة والتحكم لوكيلة المدرسة</h2>
+                        <p class="text-xs text-slate-400">إشراف: الأستاذة فوزية الغامدي | رصد ومتابعة فورية ومزامنة سحابية</p>
+                    </div>
+                </div>
+                
+                <button onclick="logoutAdmin()" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-rose-100 shadow-sm">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>العودة لواجهة التحضير الذاتي 🚪</span>
+                </button>
+            </div>
+
+            <!-- صف إعدادات التوقيت المدرسي والـ GPS والرمز السري -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- صف إعدادات التوقيت المدرسي -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+                        <i class="fa-solid fa-clock text-indigo-600"></i>
+                        <h3 class="text-sm font-bold text-slate-800">إعدادات وضبط أوقات الدوام الرسمي</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">بدء الحضور</label>
+                            <input type="time" id="config-checkin-start" onchange="saveTimeConfigs()" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold text-xs outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">نهاية السماح 🚨</label>
+                            <input type="time" id="config-checkin-late" onchange="saveTimeConfigs()" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold text-xs outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">الانصراف 🕒</label>
+                            <input type="time" id="config-checkout" onchange="saveTimeConfigs()" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold text-xs outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-indigo-600 font-semibold mt-3"><i class="fa-solid fa-circle-info"></i> يتم حساب دقائق التأخير أو الانصراف المبكر تلقائياً.</p>
+                </div>
+
+                <!-- صف إعدادات النطاق الجغرافي للمدرسة (GPS) وضبط القيود -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+                        <i class="fa-solid fa-location-crosshairs text-indigo-600"></i>
+                        <h3 class="text-sm font-bold text-slate-800">إعدادات النطاق الجغرافي للمدرسة (GPS)</h3>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1">خط العرض (Lat)</label>
+                            <input type="number" step="any" id="config-school-lat" onchange="saveGPSConfigs()" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold text-xs outline-none focus:border-indigo-500" placeholder="مثال: 24.7136">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1">خط الطول (Lng)</label>
+                            <input type="number" step="any" id="config-school-lng" onchange="saveGPSConfigs()" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold text-xs outline-none focus:border-indigo-500" placeholder="مثال: 46.6753">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1">نطاق السماح (م) 🎯</label>
+                            <input type="number" id="config-school-radius" onchange="saveGPSConfigs()" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold text-xs outline-none focus:border-indigo-500" placeholder="مثال: 100">
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mt-3 pt-2 border-t border-slate-100">
+                        <button onclick="getVPLocation()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-map-pin animate-bounce text-indigo-600"></i>
+                            جلب موقعي الحالي وتعيينه تلقائياً 📍
+                        </button>
+                    </div>
+                </div>
+
+                <!-- صف إعدادات الرمز السري للإدارة والتحكم -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+                        <i class="fa-solid fa-key text-indigo-600"></i>
+                        <h3 class="text-sm font-bold text-slate-800">تعديل رمز الدخول الإداري الآمن</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">الرمز السري الجديد للوكيلة 🔒</label>
+                            <input type="password" id="config-admin-password" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold text-xs outline-none focus:border-indigo-500" placeholder="اكتب الرمز الجديد هنا...">
+                        </div>
+                        <button onclick="saveAdminPassword()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-xl text-xs font-bold shadow-md transition-all">
+                            تحديث وحفظ رمز الدخول 💾
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- إعدادات الربط السحابي المتكامل مع جداول بيانات جوجل (Google Sheets) -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                            <i class="fa-solid fa-file-excel text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 flex items-center gap-1.5">
+                                <span>الربط السحابي مع جداول بيانات جوجل (Google Sheets)</span>
+                                <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold">مجاني وآمن 100% 🔒</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">تأسيس تلقائي وحفظ مستمر لكافة سجلات الحضور والانصراف بدقة فائقة وبشكل مجاني تماماً</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="sheet-conn-status" class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                            <span>محلي (وضع التجربة)</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                    <!-- حقل إدخال الرابط السحابي -->
+                    <div class="space-y-3">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-600">رابط برمجية سحابة جوجل المعتمد (Google Web App URL):</label>
+                            <input type="text" id="config-sheet-url" oninput="onSheetUrlChange()" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 font-semibold text-xs outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" placeholder="https://script.google.com/macros/s/.../exec">
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="saveGoogleSheetConfig()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md transition-all">حفظ وتفعيل الربط السحابي 💾</button>
+                            <button onclick="testGoogleSheetConnection()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all">اختبار الاتصال ⚡</button>
+                        </div>
+                    </div>
+
+                    <!-- دليل الإعداد خطوة بخطوة -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-200/60 text-xs text-slate-600 space-y-2">
+                        <span class="font-bold text-slate-800 block"><i class="fa-solid fa-circle-info text-emerald-600"></i> طريقة إعداد سحابة جوجل في دقيقة:</span>
+                        <ol class="list-decimal list-inside space-y-1 text-[11px] leading-relaxed">
+                            <li>افتحي حساب Google Drive الخاص بالمدرسة وقومي بإنشاء **جدول بيانات جديد (Google Sheet)**.</li>
+                            <li>من القائمة العلوية للجدول، اضغطي على **"ملحقات (Extensions)"** ثم **"Apps Script"**.</li>
+                            <li>احذفي الكود المكتوب هناك، والصقي الكود المخصص بالبطاقة أدناه، ثم اضغطي **"حفظ 💾"**.</li>
+                            <li>اضغطي على زر **"نشر (Deploy)"** باللون الأزرق بالأعلى، ثم **"نشر جديد (New deployment)"**.</li>
+                            <li>حددي النوع كـ **"تطبيق ويب (Web app)"**، واجعلي صلاحية الدخول لـ **"أي شخص (Anyone)"**، ثم اضغطي Deploy.</li>
+                            <li>انسخي رابط الويب الممنوح لكِ، وألصقيه في الحقل المخصص هنا واضغطي حفظ!</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- كود المزامنة للنسخ واللصق -->
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-700">📋 الكود البرمجي لنسخه ولصقه في Apps Script (المطور والمحصن ذاتياً للرابط المستقل والمربوط):</span>
+                        <button onclick="copyAppsScriptCode()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-3 py-1.5 rounded-lg text-[10px] flex items-center gap-1 transition-all">
+                            <i class="fa-solid fa-copy"></i> نسخ الكود 📋
+                        </button>
+                    </div>
+                    <!-- تفعيل LTR بشكل صارم لضمان عدم انقلاب الأقواس أو الرموز البرمجية أثناء النسخ -->
+                    <pre class="bg-slate-900 text-slate-200 p-3 rounded-xl font-mono text-[10px] text-left overflow-x-auto max-h-[220px] custom-scrollbar" id="apps-script-code-block" dir="ltr" style="unicode-bidi: bidi-override; text-align: left; direction: ltr;">
+/* كود محرك المزامنة السحابي المطور والذكي لجداول بيانات جوجل */
+// ⚠️ تم تضمين رابط جدول البيانات الجديد الخاص بمدرستكم تلقائياً أدناه للربط المستقر والمباشر:
+var SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1GBtbYZ4xDaeqvT2H7jFtkn6LfWPKMVmAiF1P5WUBIZE/edit?gid=0#gid=0"; 
+
+function getSpreadsheet() {
+  if (SPREADSHEET_URL && SPREADSHEET_URL.trim() !== "") {
+    try {
+      return SpreadsheetApp.openByUrl(SPREADSHEET_URL.trim());
+    } catch(e) {
+      return SpreadsheetApp.getActive();
+    }
+  }
+  return SpreadsheetApp.getActive();
+}
+
+function doGet(e) {
+  try {
+    var op = e.parameter.action;
+    var ss = getSpreadsheet();
+    if (!ss) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: "لم نجد جدول البيانات النشط. يرجى مراجعة رابط ملف الإكسل." }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var staffSheet = ss.getSheetByName("Staff") || ss.insertSheet("Staff");
+    var configSheet = ss.getSheetByName("Config") || ss.insertSheet("Config");
+    var attSheet = ss.getSheetByName("Attendance") || ss.insertSheet("Attendance");
+    
+    if (staffSheet.getLastRow() === 0) staffSheet.appendRow(["ID", "Name", "Type", "Token"]);
+    if (configSheet.getLastRow() === 0) configSheet.appendRow(["Key", "Value"]);
+    if (attSheet.getLastRow() === 0) attSheet.appendRow(["ID", "Name", "Date", "Time", "Action", "Method", "Status", "Reason"]);
+    
+    if (op === "getData") {
+      var staffData = staffSheet.getDataRange().getValues();
+      var staff = {};
+      for (var i = 1; i < staffData.length; i++) {
+        staff[staffData[i][0]] = { id: String(staffData[i][0]), name: staffData[i][1], type: staffData[i][2], token: staffData[i][3] || null };
+      }
+      var configData = configSheet.getDataRange().getValues();
+      var config = {};
+      for (var i = 1; i < configData.length; i++) {
+        config[configData[i][0]] = configData[i][1];
+      }
+      var attData = attSheet.getDataRange().getValues();
+      var attendance = [];
+      for (var i = attData.length - 1; i >= 1; i--) {
+        attendance.push({ id: String(attData[i][0]), name: attData[i][1], date: attData[i][2], time: attData[i][3], action: attData[i][4], method: attData[i][5], status: attData[i][6], reason: attData[i][7] });
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: true, staff: staff, config: config, attendance: attendance }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "addAttendance") {
+      var attSheet = ss.getSheetByName("Attendance") || ss.insertSheet("Attendance");
+      attSheet.appendRow([e.parameter.id, e.parameter.name, e.parameter.date, e.parameter.time, e.parameter.actionType, e.parameter.method, e.parameter.status, e.parameter.reason]);
+      return ContentService.createTextOutput(JSON.stringify({success: true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "addStaff") {
+      var staffSheet = ss.getSheetByName("Staff") || ss.insertSheet("Staff");
+      staffSheet.appendRow([e.parameter.id, e.parameter.name, e.parameter.type, e.parameter.token || ""]);
+      return ContentService.createTextOutput(JSON.stringify({success: true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "updateToken") {
+      var staffSheet = ss.getSheetByName("Staff");
+      var staffData = staffSheet.getDataRange().getValues();
+      for (var i = 1; i < staffData.length; i++) {
+        if (String(staffData[i][0]) === String(e.parameter.id)) {
+          staffSheet.getRange(i + 1, 4).setValue(e.parameter.token || "");
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({success: true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "deleteStaff") {
+      var staffSheet = ss.getSheetByName("Staff");
+      var staffData = staffSheet.getDataRange().getValues();
+      for (var i = 1; i < staffData.length; i++) {
+        if (String(staffData[i][0]) === String(e.parameter.id)) {
+          staffSheet.deleteRow(i + 1);
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({success: true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "deleteAttendance") {
+      var attSheet = ss.getSheetByName("Attendance");
+      var attData = attSheet.getDataRange().getValues();
+      for (var i = 1; i < attData.length; i++) {
+        if (String(attData[i][0]) === String(e.parameter.id) && String(attData[i][2]) === String(e.parameter.date) && String(attData[i][3]) === String(e.parameter.time) && String(attData[i][4]) === String(e.parameter.actionType)) {
+          attSheet.deleteRow(i + 1);
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({success: true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "resetSystem") {
+      var sheets = ss.getSheets();
+      for (var i = 0; i < sheets.length; i++) {
+        if (sheets[i].getName() !== "Temp") {
+          try { ss.deleteSheet(sheets[i]); } catch(err) {}
+        }
+      }
+      ss.insertSheet("Staff").appendRow(["ID", "Name", "Type", "Token"]);
+      ss.insertSheet("Attendance").appendRow(["ID", "Name", "Date", "Time", "Action", "Method", "Status", "Reason"]);
+      ss.insertSheet("Config").appendRow(["Key", "Value"]);
+      return ContentService.createTextOutput(JSON.stringify({success: true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</pre>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- أداة تحديث ومزامنة الهواتف السلسة للمدرسة -->
+                <div class="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl shadow-sm flex flex-col justify-between lg:col-span-2 space-y-4">
+                    <div class="space-y-1">
+                        <h3 class="text-sm font-bold text-indigo-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrows-rotate text-indigo-600 text-sm"></i>
+                            <span>تحديث هواتف المعلمات تلقائياً (بدون أي إجراء من المعلمة!) 🚀</span>
+                        </h3>
+                        <p class="text-xs text-indigo-700 leading-relaxed">
+                            لتحديث جميع هواتف المعلمات فوراً وتطابق الأسماء لديهن دون إجبارهن على كتابة أي أكواد:
+                            <br>
+                            <strong>1.</strong> اضغطي على زر التحميل بالأسفل لحفظ ملف <code class="bg-indigo-200 px-1 rounded">staff.json</code> على جهازك.
+                            <br>
+                            <strong>2.</strong> اذهبي لمستودع GitHub الخاص بكِ وقومي برفع الملف الجديد ومستبدلة القديم به.
+                            <br>
+                            <strong>3.</strong> سيقوم هاتف كل معلمة بقراءة الأسماء الجديدة وتحديث القيود فورياً وبشكل صامت عند الدخول للموقع!
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 pt-2">
+                        <button onclick="downloadStaffDatabaseFile()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition-all active:scale-95 flex items-center gap-2">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                            <span>تحميل ملف التحديث للمدرسة (staff.json) 📥</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- بطاقة إدارة مسح البيانات الشامل -->
+                <div class="bg-rose-50 border border-rose-100 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between border-b border-rose-200/50 pb-3 mb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-600 animate-pulse text-lg"></i>
+                            <h3 class="text-sm font-bold text-rose-800">تصفير النظام بالكامل</h3>
+                        </div>
+                        <span class="text-[10px] bg-rose-200 text-rose-800 px-2 py-0.5 rounded-full font-bold">إجراء حساس</span>
+                    </div>
+                    <p class="text-[11px] text-rose-700 leading-relaxed mb-4">
+                        سيقوم هذا الخيار بمسح وتصفير كافة سجلات الحضور والانصراف، وحذف أسماء المعلمات المسجلات نهائياً ليعود النظام خالياً كلياً للتأسيس الميداني الجديد.
+                    </p>
+                    <button onclick="triggerResetSystem()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-xl text-xs shadow-md transition-all">
+                        مسح كافة البيانات وإعادة ضبط المصنع ⚠️
+                    </button>
+                </div>
+            </div>
+
+            <!-- لوحة الإحصائيات الفورية والذكية ومراقبة الدوام -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- بطاقة الحضور الكلي -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div class="space-y-1">
+                        <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">إجمالي حضور اليوم</span>
+                        <h3 id="stat-present" class="text-2xl font-extrabold text-slate-800">0</h3>
+                        <p class="text-xs text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> منسوبات رصدن حضوراً</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                </div>
+
+                <!-- بطاقة التأخير المكتشف -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div class="space-y-1">
+                        <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">التأخير المكتشف اليوم</span>
+                        <h3 id="stat-late" class="text-2xl font-extrabold text-slate-800">0</h3>
+                        <p class="text-xs text-amber-600 font-semibold"><i class="fa-solid fa-clock-rotate-left"></i> بعد فترة السماح</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                </div>
+
+                <!-- بطاقة حالات الغياب المكتشف -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div class="space-y-1">
+                        <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">حالات الغياب اليوم</span>
+                        <h3 id="stat-absent" class="text-2xl font-extrabold text-slate-800">0</h3>
+                        <p class="text-xs text-rose-600 font-semibold"><i class="fa-solid fa-circle-xmark"></i> غياب مكتشف بالرصد السحابي</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-user-xmark"></i>
+                    </div>
+                </div>
+
+                <!-- وضع طوارئ الحضور -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div class="space-y-1">
+                        <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">طوارئ حضوري الوزاري</span>
+                        <h3 id="stat-emergency-label" class="text-base font-extrabold text-slate-800">معطّل (الوضع العادي)</h3>
+                        <p class="text-xs text-slate-500 font-medium">مخصص فقط لبند العقود حالياً</p>
+                    </div>
+                    <div id="stat-emergency-icon" class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- لوحة التقارير الاستقصائية والتحليلات المتقدمة -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                            <i class="fa-solid fa-chart-line text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800">مركز استخراج التقارير الاستقصائية المتقدمة</h3>
+                            <p class="text-xs text-slate-400">توليد تقارير مخصصة تفصيلية أو إحصائية للمنسوبات في جميع الأيام والتواريخ</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- خيارات وفلاتر تصفية التقرير -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/50">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">نوع التقرير المستهدف</label>
+                        <select id="report-type-select" onchange="onReportTypeChange()" class="w-full bg-white px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold outline-none focus:border-indigo-500">
+                            <option value="all-range">كافة منسوبات المدرسة (في تاريخ محدد)</option>
+                            <option value="single-all-days">منسوبة واحدة بعينها (جميع الأيام والسجلات)</option>
+                        </select>
+                    </div>
+
+                    <div id="report-staff-filter-container" class="hidden">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">اختر الموظفة المستهدفة</label>
+                        <select id="report-staff-select" class="w-full bg-white px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold outline-none focus:border-indigo-500"></select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">تاريخ البداية (من)</label>
+                        <input type="date" id="report-date-start" class="w-full bg-white px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold outline-none focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">تاريخ النهاية (إلى)</label>
+                        <input type="date" id="report-date-end" class="w-full bg-white px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-2">
+                    <div class="flex gap-2">
+                        <button onclick="generateCustomReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md transition-all active:scale-95 flex items-center gap-1.5">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <span>توليد ومعاينة التقرير 🔍</span>
+                        </button>
+                        <button onclick="clearReportFilters()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-4 py-2 rounded-xl text-xs transition-all">تصفية الفلاتر</button>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="exportReportToPDF()" class="bg-red-50 hover:bg-red-100 text-red-700 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-red-100 shadow-sm">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>تصدير تقرير PDF 📄</span>
+                        </button>
+                        <button onclick="exportReportToExcel()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-emerald-100 shadow-sm">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <span>تصدير تقرير Excel 📊</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- مساحة المعاينة الحية للتقرير المستخرج -->
+                <div class="border border-slate-100 rounded-xl overflow-hidden shadow-inner max-h-[300px] overflow-y-auto custom-scrollbar">
+                    <table class="w-full text-right border-collapse">
+                        <thead>
+                            <tr class="bg-indigo-50/70 text-indigo-900 border-b border-indigo-100 text-xs font-bold">
+                                <th class="p-3">اسم الموظفة / السجل</th>
+                                <th class="p-3 text-center">نوع الدوام</th>
+                                <th class="p-3">تاريخ الحركة</th>
+                                <th class="p-3">وقت الرصد</th>
+                                <th class="p-3 text-center">نوع الحركة</th>
+                                <th class="p-3">الحالة والزمن</th>
+                                <th class="p-3">الملاحظات التبريرية</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-view-table-body" class="text-slate-700 text-xs divide-y divide-slate-100">
+                            <tr>
+                                <td colspan="7" class="text-center p-8 text-slate-400 font-medium">
+                                    <i class="fa-solid fa-folder-open text-2xl mb-2 block"></i>
+                                    يرجى اختيار فلاتر التقرير والنقر على "توليد ومعاينة التقرير" لعرض البيانات المخصصة هنا.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- لوحة التحكم الإدارية المتقدمة والإشراف الفوري -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- العمود الأيمن: إدارة الأجهزة، الموظفات، وتفعيل وضع الطوارئ -->
+                <div class="lg:col-span-4 space-y-6">
+                    
+                    <!-- قسم تسجيل المنسوبات (يدوي + استيراد Excel) -->
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                        <div class="flex items-center gap-2 border-b border-slate-100 pb-2">
+                            <i class="fa-solid fa-user-plus text-indigo-600"></i>
+                            <h4 class="font-bold text-slate-800 text-sm">تسجيل وإضافة منسوبات المدرسة</h4>
+                        </div>
+                        
+                        <!-- التبويبات للتبديل بين الإدخال اليدوي والاستيراد من إكسل -->
+                        <div class="flex border-b border-slate-100 pb-1">
+                            <button onclick="switchInsertTab('manual')" id="tab-btn-manual" class="flex-1 text-center pb-2 text-xs font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">إدخال يدوي ✍️</button>
+                            <button onclick="switchInsertTab('excel')" id="tab-btn-excel" class="flex-1 text-center pb-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">رفع ملف إكسل 📊</button>
+                        </div>
+
+                        <!-- الحقول اليدوية للإضافة -->
+                        <div id="insert-manual-container" class="space-y-2">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500">اسم المنسوبة بالكامل</label>
+                                <input type="text" id="new-staff-name" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold outline-none focus:border-indigo-500" placeholder="مثال: أ. منيرة العتيبي">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500">رقم السجل المدني (الهوية الوطنية)</label>
+                                <input type="text" id="new-staff-id" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold outline-none focus:border-indigo-500" placeholder="مثال: 1004">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500">الفئة الإدارية والدوام</label>
+                                <select id="new-staff-type" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold outline-none focus:border-indigo-500">
+                                    <option value="contract">بند العقود (نشط دائم بالبديل)</option>
+                                    <option value="permanent">معلمة رسمية (طوارئ فقط)</option>
+                                </select>
+                            </div>
+                            <button onclick="addNewStaffMember()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-xs font-bold shadow-md shadow-indigo-100 transition-colors">
+                                <i class="fa-solid fa-plus-circle"></i> حفظ وإدراج الموظفة بالنظام
+                            </button>
+                        </div>
+
+                        <!-- صندوق رفع ملف Excel -->
+                        <div id="insert-excel-container" class="hidden space-y-3">
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] text-slate-500 leading-relaxed space-y-1">
+                                <span class="font-bold text-slate-700 block mb-1">💡 شروط ملف الإكسل المعتمد للاستيراد:</span>
+                                <p>- يجب أن يحتوي على أعمدة: <span class="font-bold text-indigo-600">"الاسم"</span>، و<span class="font-bold text-indigo-600">"السجل المدني"</span>.</p>
+                            </div>
+
+                            <div class="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer relative" onclick="triggerExcelFileInput()">
+                                <i class="fa-solid fa-file-excel text-3xl text-emerald-600 mb-2"></i>
+                                <span class="text-xs font-bold text-slate-600 text-center" id="excel-file-label">انقري لرفع وتحديد ملف الإكسل</span>
+                                <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
+                            </div>
+                            
+                            <button onclick="downloadExcelTemplate()" class="w-full text-[11px] text-indigo-600 hover:text-indigo-800 font-bold text-center block transition-colors bg-indigo-50 py-1.5 rounded-lg border border-indigo-100">
+                                <i class="fa-solid fa-circle-down"></i> تحميل نموذج إكسل تجريبي 📥
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- صندوق تفعيل وضع انقطاع "حضوري الوزاري" -->
+                    <div class="bg-gradient-to-br from-school-navy to-slate-800 text-white p-5 rounded-2xl shadow-md border border-slate-700">
+                        <div class="flex items-center gap-3 mb-3">
+                            <i class="fa-solid fa-shield-halved text-brand-500 text-xl"></i>
+                            <h4 class="font-bold">مفتاح خطة الطوارئ للرسميات</h4>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed mb-4">في حال تعطل "تطبيق حضوري الوزاري"، فَعِّلي هذا الزر ليتمكن كافة منسوبات المدرسة الرسميات من التحضير عبر نظامك البديل هنا.</p>
+                        
+                        <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                            <span class="text-xs font-bold text-slate-300">السماح لجميع المنسوبات:</span>
+                            <button onclick="toggleEmergencyMode()" id="toggle-emergency-switch" class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-slate-600">
+                                <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0" id="emergency-switch-thumb"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- قائمة إدارة المنسوبات وبصمات الأجهزة والتدخل الاستثنائي -->
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                            <h4 class="font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-users text-slate-500"></i>
+                                <span>قائمة المنسوبات والمطابقة</span>
+                            </h4>
+                            <span class="text-xs bg-slate-100 px-2 py-0.5 rounded-full font-bold text-slate-500" id="total-staff-count">0</span>
+                        </div>
+
+                        <!-- شريط البحث المباشر في لوحة التحكم -->
+                        <div class="relative">
+                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            </span>
+                            <input type="text" id="search-staff-input" oninput="renderAdminDashboard()" class="w-full pl-3 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:border-indigo-500 transition-all placeholder:text-slate-300" placeholder="البحث عن موظفة بالاسم أو السجل...">
+                        </div>
+
+                        <!-- طابور المعلمات -->
+                        <div class="space-y-3 max-h-[350px] overflow-y-auto custom-scrollbar pr-1" id="staff-admin-list"></div>
+                    </div>
+                </div>
+
+                <!-- Column Left: Active Attendance Feed -->
+                <div class="lg:col-span-8 space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <div class="space-y-1">
+                                <h4 class="font-bold text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-bolt text-brand-500 animate-pulse"></i>
+                                    <span>مسير حركات الدوام اللحظية والغياب المكتشف</span>
+                                </h4>
+                                <p class="text-xs text-slate-400">تحديث تلقائي فوري للموثوقية اللامركزية وتفاصيل التأخير</p>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div id="offline-sync-indicator" class="hidden flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg border border-amber-100 text-xs font-bold">
+                                    <i class="fa-solid fa-cloud-arrow-up animate-bounce"></i>
+                                    <span>حركات بالانتظار (<span id="sync-queue-count">0</span>)</span>
+                                </div>
+                                <button onclick="exportToPDF()" class="bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-red-100 shadow-sm">
+                                    <i class="fa-solid fa-file-pdf"></i>
+                                    <span>تقرير PDF 📄</span>
+                                </button>
+                                <button onclick="exportToExcel()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-emerald-100 shadow-sm">
+                                    <i class="fa-solid fa-file-excel"></i>
+                                    <span>تصدير Excel 📊</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- جدول الدوام -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right border-collapse min-w-[700px]">
+                                <thead>
+                                    <tr class="bg-slate-50/70 border-b border-slate-100 text-slate-500 text-xs font-bold">
+                                        <th class="p-4">اسم المنسوبة</th>
+                                        <th class="p-4 text-center">نوع الحركة</th>
+                                        <th class="p-4">الوقت الفعلي</th>
+                                        <th class="p-4">طريقة التحقق</th>
+                                        <th class="p-4 text-center">حالة التأخير</th>
+                                        <th class="p-4">الملاحظات</th>
+                                        <th class="p-4 text-center">حذف</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-feed-table" class="text-slate-700 text-xs divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الفوتر العام البسيط -->
+        <footer id="public-footer" class="bg-slate-200 border-t border-slate-300 py-6 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-slate-800 font-extrabold">
+                <p class="text-center sm:text-right tracking-wide text-slate-900">
+                    © 2026 الابتدائية الثامنة والعشرون بالقريات. وكيلة المدرسة الأستاذة فوزية الغامدي. جميع الحقوق محفوظة.
+                </p>
+                <div class="flex items-center gap-2">
+                    <button onclick="openAdminLoginModal()" class="text-indigo-900 hover:text-white hover:bg-indigo-700 font-extrabold transition-all flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-indigo-300 shadow-md">
+                        <i class="fa-solid fa-user-lock text-indigo-600"></i>
+                        بوابة وكيلة المدرسة 🔐
+                    </button>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <!-- نافذة تسجيل دخول الوكيلة -->
+    <div id="admin-login-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-slate-100 text-right animate-fade-in">
+            <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mx-auto mb-3">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h4 class="text-base font-bold text-slate-800 mb-2 text-center">بوابة وكيلة المدرسة الآمنة</h4>
+            <p class="text-xs text-slate-400 leading-relaxed mb-4 text-center">يرجى كتابة رمز الدخول الإداري لفتح لوحة المتابعة وتصدير التقارير.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">رمز الدخول الإداري</label>
+                    <input type="password" id="admin-password-input" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none text-center font-semibold text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" placeholder="••••">
+                </div>
+                
+                <div class="flex gap-2 pt-2">
+                    <button onclick="closeAdminLoginModal()" class="w-1/2 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs transition-all">إلغاء</button>
+                    <button onclick="submitAdminLogin()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold text-xs shadow-md shadow-indigo-100 transition-all">دخول 🔓</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة منبثقة مخصصة لإدخال تبرير التحضير الإداري الاستثنائي -->
+    <div id="manual-checkin-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100 relative animate-fade-in">
+            <h4 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-user-pen text-brand-500"></i>
+                <span>تسجيل حركة إدارية استثنائية</span>
+            </h4>
+            <p class="text-xs text-slate-500 leading-relaxed mb-4">هذا الإجراء مخصص فقط لوكيلة المدرسة لتجاوز الحالات الطارئة.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">اسم الموظفة المستهدفة</label>
+                    <input type="text" id="modal-staff-name" class="w-full bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 font-bold text-slate-700 text-xs outline-none" readonly>
+                    <input type="hidden" id="modal-staff-id">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">نوع الحركة الإدارية</label>
+                        <select id="modal-action-type" class="w-full bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold outline-none">
+                            <option value="حضور">تسجيل حضور ☀️</option>
+                            <option value="انصراف">تسجيل انصراف 🕒</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">تأكيد وقت الإجراء</label>
+                        <input type="text" id="modal-time" class="w-full bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700" readonly>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">السبب التبريري للإجراء</label>
+                    <select id="modal-reason-select" onchange="toggleCustomReason()" class="w-full bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold outline-none mb-2">
+                        <option value="عطل تقني طارئ في الهاتف">عطل تقني طارئ في الهاتف المحمول للمعلمة</option>
+                        <option value="نسيان الهاتف المحمول">نسيان الهاتف المحمول بالمنزل</option>
+                        <option value="إذن رسمي من إدارة المدرسة">إذن رسمي من إدارة المدرسة لمهمة خارجية</option>
+                        <option value="مشكلة مؤقتة في تحديد الإحداثيات GPS">مشكلة مؤقتة في تحديد إحداثيات الجوال (GPS)</option>
+                        <option value="custom">كتابة سبب مخصص آخر...</option>
+                    </select>
+                    <input type="text" id="modal-reason-custom" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none hidden placeholder:text-slate-300" placeholder="اكتب السبب الإداري التفصيلي هنا...">
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button onclick="closeManualModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs transition-colors">إلغاء</button>
+                    <button onclick="submitManualCheckIn()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md shadow-brand-100 transition-all">ايجاز واعتماد الإجراء 💾</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تأكيد مخصصة للعمليات الهامة -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-slate-100 text-center animate-fade-in">
+            <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-xl mx-auto mb-3">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h4 id="confirm-title" class="text-base font-bold text-slate-800 mb-2">تأكيد الإجراء</h4>
+            <p id="confirm-message" class="text-xs text-slate-500 leading-relaxed mb-5">هل أنت متأكد من تنفيذ هذا الإجراء الإداري؟</p>
+            
+            <div class="flex items-center justify-center gap-3">
+                <button onclick="closeConfirmModal()" class="w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs transition-all">تراجع</button>
+                <button id="confirm-submit-btn" class="w-full bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-xl font-bold text-xs shadow-md transition-all">تأكيد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- حاوية الإشعارات العائمة التلقائية (Floating Toasts) -->
+    <div id="toast-container" class="fixed bottom-5 left-5 z-50 space-y-2 pointer-events-none max-w-md w-full px-4"></div>
+
+    <!-- كود الجافاسكريبت والمحرك البرمجي لمحاكاة النظام بالكامل -->
+    <script>
+        // ثوابت وقيم النطاقات الجغرافية الافتراضية
+        let SCHOOL_LAT = 24.7136;
+        let SCHOOL_LNG = 46.6753;
+        let SCHOOL_RADIUS = 100;
+
+        // الحالة التشغيلية الافتراضية للتطبيق
+        const defaultState = {
+            activeRole: 'teacher',
+            emergencyMode: false,
+            isOnline: true,
+            gpsStatus: 'inside',
+            useIncorrectDevice: false,
+            currentInsertTab: 'manual',
+            adminPin: '2026',
+            googleSheetUrl: '', // رابط برمجية جوجل للربط السحابي اللحظي
+            
+            schoolLocation: {
+                lat: 24.7136,
+                lng: 46.6753,
+                radius: 100
+            },
+
+            timings: {
+                checkInStart: "06:00",
+                checkInLate: "06:45",
+                checkOutTime: "13:00"
+            },
+
+            staff: {},
+            attendance: [],
+            offlineQueue: [],
+            customSimulatedTime: null
+        };
+
+        // تحميل الحالة من الذاكرة المحلية
+        let state = JSON.parse(localStorage.getItem('school_attendance_system_state')) || defaultState;
+
+        // تصفير وتهيئة المتغيرات التشغيلية المؤقتة لتلافي استمرار الحظر
+        state.activeRole = 'teacher';
+        state.isOnline = true;
+        state.gpsStatus = 'inside';
+        state.useIncorrectDevice = false;
+        state.customSimulatedTime = null;
+
+        // دالة حفظ ومزامنة حالة النظام بالمتصفح بشكل مستمر
+        function saveState() {
+            localStorage.setItem('school_attendance_system_state', JSON.stringify(state));
+        }
+
+        // دالة تحويل وتوحيد الأرقام المكتوبة باللغة العربية إلى أرقام نظامية دولية
+        function convertArabicNumerals(str) {
+            if (!str) return '';
+            const arabicNums = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
+            const easternNums = [/0/g, /1/g, /2/g, /3/g, /4/g, /5/g, /6/g, /7/g, /8/g, /9/g];
+            
+            let normalized = String(str);
+            for (let i = 0; i < 10; i++) {
+                normalized = normalized.replace(arabicNums[i], i).replace(easternNums[i], i);
+            }
+            return normalized;
+        }
+
+        // دالة البدء الأولي للتشغيل الحقيقي
+        window.onload = function() {
+            // تحديث القيود الجغرافية
+            SCHOOL_LAT = state.schoolLocation.lat;
+            SCHOOL_LNG = state.schoolLocation.lng;
+            SCHOOL_RADIUS = state.schoolLocation.radius;
+
+            // محاولة جلب البيانات من سحابة جداول جوجل إذا كانت مهيئة ومربوطة
+            if (state.googleSheetUrl) {
+                syncWithGoogleSheet();
+            } else {
+                // محاولة جلب قاعدة البيانات الموحدة staff.json كخيار محلي احتياطي
+                fetch('staff.json')
+                    .then(response => { if (response.ok) return response.json(); throw new Error('No staff.json'); })
+                    .then(data => {
+                        if (data && data.staff) {
+                            state.staff = data.staff;
+                            state.schoolLocation = data.schoolLocation || state.schoolLocation;
+                            state.timings = data.timings || state.timings;
+                            
+                            SCHOOL_LAT = state.schoolLocation.lat;
+                            SCHOOL_LNG = state.schoolLocation.lng;
+                            SCHOOL_RADIUS = state.schoolLocation.radius;
+                            
+                            saveState();
+                            updateTeacherPortalLocationUI();
+                            renderAdminDashboard();
+                            showToast("✨ تم تحديث بيانات المعلمات المحلية من مستودع GitHub بنجاح!", "success");
+                        }
+                    })
+                    .catch(err => console.log("Running local storage offline fallback mode.", err));
+            }
+
+            // شحن قيم المدخلات من الإعدادات المحفوظة
+            document.getElementById('config-checkin-start').value = state.timings.checkInStart;
+            document.getElementById('config-checkin-late').value = state.timings.checkInLate;
+            document.getElementById('config-checkout').value = state.timings.checkOutTime;
+
+            document.getElementById('config-school-lat').value = state.schoolLocation.lat;
+            document.getElementById('config-school-lng').value = state.schoolLocation.lng;
+            document.getElementById('config-school-radius').value = state.schoolLocation.radius;
+            document.getElementById('config-sheet-url').value = state.googleSheetUrl || '';
+
+            // تشغيل محرك الساعة المحاكاة
+            updateMobileClock();
+            setInterval(updateMobileClock, 1000);
+
+            // تفعيل الواجهات
+            renderAdminDashboard();
+            updateTeacherPortalLocationUI();
+            updateGoogleSheetSyncUI();
+            
+            // تعيين رمز مميز آمن ومطابق لمحاكاة جهاز المعلمة الفعلي
+            if (!localStorage.getItem('my_school_sim_device_token')) {
+                localStorage.setItem('my_school_sim_device_token', 'device-token-1001-original');
+            }
+
+            // ملء تواريخ فلاتر التقارير بالوقت الحالي بشكل تلقائي لتسهيل العرض
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('report-date-start').value = todayStr;
+            document.getElementById('report-date-end').value = todayStr;
+        };
+
+        // محرك قراءة البيانات السحابية من جداول جوجل (CORS Safe GET Request)
+        function syncWithGoogleSheet() {
+            if (!state.googleSheetUrl) return;
+
+            const url = `${state.googleSheetUrl}?action=getData`;
+
+            fetch(url, { method: 'GET', redirect: 'follow' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.success) {
+                        state.staff = data.staff || {};
+                        state.attendance = data.attendance || [];
+                        if (data.config) {
+                            state.timings.checkInStart = data.config.checkInStart || state.timings.checkInStart;
+                            state.timings.checkInLate = data.config.checkInLate || state.timings.checkInLate;
+                            state.timings.checkOutTime = data.config.checkOutTime || state.timings.checkOutTime;
+                        }
+                        saveState();
+                        renderAdminDashboard();
+                        updateTeacherPortalLocationUI();
+                        updateGoogleSheetSyncUI(true);
+                        showToast("🟢 تم مزامنة البيانات وتحديث الحركات والمنسوبات من جداول جوجل بنجاح!", "success");
+                    } else if (data && data.success === false) {
+                        updateGoogleSheetSyncUI(false);
+                        showToast(`🛑 خطأ سحابي: ${data.error}`, "warning");
+                    }
+                })
+                .catch(err => {
+                    console.error("Error syncing with Google Sheets:", err);
+                    updateGoogleSheetSyncUI(false);
+                    showToast("❌ فشل الاتصال التلقائي بسحابة جوجل؛ يرجى مراجعة صلاحية الرابط المنشور.", "warning");
+                });
+        }
+
+        // اختبار الاتصال بجدول جوجل من لوحة التحكم (CORS Safe GET Request)
+        function testGoogleSheetConnection() {
+            const urlInput = document.getElementById('config-sheet-url').value.trim();
+            if (!urlInput) {
+                showToast("⚠️ يرجى لصق الرابط المعتمد أولاً للاختبار!", "warning");
+                return;
+            }
+
+            showToast("⚡ جاري اختبار الاتصال وإجراء فحص قراءة البيانات من جوجل...", "info");
+
+            fetch(`${urlInput}?action=getData`, { method: 'GET', redirect: 'follow' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.success) {
+                        showToast("🟢 رائع! تم الاتصال بنجاح وقراءة البيانات من جدول جوجل السحابي الخاص بكِ.", "success");
+                        state.googleSheetUrl = urlInput;
+                        saveState();
+                        syncWithGoogleSheet();
+                    } else if (data && data.success === false) {
+                        showToast(`🛑 فشل الاتصال: ${data.error}`, "warning");
+                    } else {
+                        showToast("⚠️ استجاب الخادم ولكن بتنسيق غير صحيح؛ تأكدي من صحة كود Apps Script المرفوع.", "warning");
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast("❌ فشل الاتصال! تأكدي من نشر البرمجية كـ Web App وإتاحة صلاحية الوصول لـ 'Anyone' ووضع رابط ورقة الإكسل في المتغير SPREADSHEET_URL بالأعلى.", "warning");
+                });
+        }
+
+        // حفظ إعدادات رابط جداول جوجل وتفعيله
+        function saveGoogleSheetConfig() {
+            const urlInput = document.getElementById('config-sheet-url').value.trim();
+            state.googleSheetUrl = urlInput;
+            saveState();
+            
+            if (urlInput) {
+                syncWithGoogleSheet();
+            } else {
+                updateGoogleSheetSyncUI(false);
+                showToast("ℹ️ تم إلغاء ربط سحابة جوجل، والنظام يعمل الآن في الوضع المحلي الافتراضي.", "info");
+                renderAdminDashboard();
+            }
+        }
+
+        // تحديث المظهر الخارجي ومؤشرات حالة المزامنة مع جداول جوجل
+        function updateGoogleSheetSyncUI(isConnected = null) {
+            const statusBadge = document.getElementById('sheet-conn-status');
+            const headerBadge = document.getElementById('header-sync-status');
+            
+            const connected = isConnected !== null ? isConnected : (state.googleSheetUrl !== '');
+
+            if (connected && state.googleSheetUrl) {
+                statusBadge.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1";
+                statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> <span>متصل بسحابة جوجل 🟢</span>`;
+                
+                headerBadge.className = "text-[10px] bg-emerald-600/20 text-brand-100 border border-brand-500/30 px-2.5 py-1 rounded-full font-semibold flex items-center gap-1.5";
+                headerBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> <span>سحابة جوجل نشطة</span>`;
+            } else {
+                statusBadge.className = "text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1";
+                statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> <span>محلي (غير متصل بجوجل)</span>`;
+                
+                headerBadge.className = "text-[10px] bg-red-600/20 text-red-100 border border-red-500/30 px-2 py-1 rounded-full font-semibold flex items-center gap-1";
+                headerBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> <span>محلي (وضع التجربة)</span>`;
+            }
+        }
+
+        // نسخ كود الـ Apps Script بضغطة زر
+        function copyAppsScriptCode() {
+            const code = document.getElementById('apps-script-code-block').innerText;
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = code;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            showToast("📋 تم نسخ كود Apps Script بنجاح! الصقيه في محرر نصوص جوجل للبرمجة.", "success");
+        }
+
+        // دالة تحديث ساعة شاشة الجوال
+        function updateMobileClock() {
+            let now = new Date();
+            if (state.customSimulatedTime) {
+                const [h, m] = state.customSimulatedTime.split(':').map(Number);
+                now.setHours(h);
+                now.setMinutes(m);
+            }
+            let hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'م' : 'ص';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            document.getElementById('mobile-clock').innerText = `${hours}:${minutes} ${ampm}`;
+        }
+
+        // حفظ إعدادات أوقات الدوام وحساب الفارق
+        function saveTimeConfigs() {
+            state.timings.checkInStart = document.getElementById('config-checkin-start').value;
+            state.timings.checkInLate = document.getElementById('config-checkin-late').value;
+            state.timings.checkOutTime = document.getElementById('config-checkout').value;
+            
+            saveState();
+            showToast("⚙️ تم تحديث أوقات الدوام الرسمي ومزامنتها لحساب التأخير بنجاح.", "success");
+            renderAdminDashboard();
+        }
+
+        // حفظ إعدادات الـ GPS وتحديث المتغيرات العامة للتحقق
+        function saveGPSConfigs() {
+            state.schoolLocation.lat = parseFloat(document.getElementById('config-school-lat').value) || 24.7136;
+            state.schoolLocation.lng = parseFloat(document.getElementById('config-school-lng').value) || 46.6753;
+            state.schoolLocation.radius = parseInt(document.getElementById('config-school-radius').value) || 100;
+            
+            SCHOOL_LAT = state.schoolLocation.lat;
+            SCHOOL_LNG = state.schoolLocation.lng;
+            SCHOOL_RADIUS = state.schoolLocation.radius;
+
+            saveState();
+            showToast("📍 تم حفظ إحداثيات موقع المدرسة ونطاق السماح، وتحديث قيود تحضير المعلمات بنجاح.", "success");
+            updateTeacherPortalLocationUI();
+        }
+
+        // جلب موقع الوكيلة الجغرافي الفعلي لضبط إحداثيات المدرسة بضغطة زر
+        function getVPLocation() {
+            if (!navigator.geolocation) {
+                showToast("⚠️ المتصفح لا يدعم تحديد المواقع الـ GPS جغرافياً.", "warning");
+                return;
+            }
+
+            showToast("🔄 جاري الاتصال بنظام الأقمار الصناعية GPS وتحديد إحداثياتك الميدانية...", "info");
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    document.getElementById('config-school-lat').value = lat;
+                    document.getElementById('config-school-lng').value = lng;
+
+                    saveGPSConfigs();
+                },
+                (error) => {
+                    let errorMsg = "فشل في التقاط موقعك الجغرافي الميداني.";
+                    if (error.code === error.PERMISSION_DENIED) {
+                        errorMsg = "🛑 تم رفض إذن الوصول للموقع. يرجى تفعيل الـ GPS وصلاحية الموقع للمتصفح.";
+                    }
+                    showToast(errorMsg, "warning");
+                },
+                { enableHighAccuracy: true, timeout: 12000 }
+            );
+        }
+
+        // تحديث معلومات المطابقة الجغرافية للمدرسة المعروضة للمعلّمة بالبوابة الذكية
+        function updateTeacherPortalLocationUI() {
+            const label = document.getElementById('teacher-school-coords-text');
+            if (label && state.schoolLocation) {
+                label.innerText = `قيود الإحداثيات: ${state.schoolLocation.lat.toFixed(5)}، ${state.schoolLocation.lng.toFixed(5)} (±${state.schoolLocation.radius}م)`;
+            }
+        }
+
+        // دالة تنزيل ملف التحديث السحابي staff.json لمزامنته فورا في GitHub
+        function downloadStaffDatabaseFile() {
+            const payload = {
+                staff: state.staff,
+                schoolLocation: state.schoolLocation,
+                timings: state.timings
+            };
+            const jsonStr = JSON.stringify(payload, null, 2);
+            const blob = new Blob([jsonStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "staff.json";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast("📥 تم تحميل ملف 'staff.json' بنجاح. قومي برفع هذا الملف إلى مستودع GitHub الخاص بكِ ليتم تحديث كافة أجهزة المعلمات تلقائياً وبأمان!", "success");
+        }
+
+        // محاكاة تغيير أوقات اليوم من شريط المحاكاة لتجربة أثر التأخير والانصراف
+        function updateSimulatedTimePreset() {
+            const select = document.getElementById('sim-time-select');
+            if (select.value === 'current') {
+                state.customSimulatedTime = null;
+                showToast("🕒 تم العودة للوقت والزمن الفعلي للجهاز.", "info");
+            } else {
+                state.customSimulatedTime = select.value;
+                showToast(`🕒 تم محاكاة زمن الدوام على الساعة (${select.value}) لاختبار دقة رصد وتصنيف الدقائق.`, "info");
+            }
+            updateMobileClock();
+        }
+
+        // التبديل التفاعلي بين الإدخال اليدوي أو رفع إكسل
+        function switchInsertTab(tab) {
+            state.currentInsertTab = tab;
+            saveState();
+            
+            const btnManual = document.getElementById('tab-btn-manual');
+            const btnExcel = document.getElementById('tab-btn-excel');
+            const containerManual = document.getElementById('insert-manual-container');
+            const containerExcel = document.getElementById('insert-excel-container');
+
+            if (tab === 'manual') {
+                btnManual.className = "flex-1 text-center pb-2 text-xs font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors";
+                btnExcel.className = "flex-1 text-center pb-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors";
+                containerManual.classList.remove('hidden');
+                containerExcel.classList.add('hidden');
+            } else {
+                btnManual.className = "flex-1 text-center pb-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors";
+                btnExcel.className = "flex-1 text-center pb-2 text-xs font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors";
+                containerManual.classList.add('hidden');
+                containerExcel.classList.remove('hidden');
+            }
+        }
+
+        // إضافة موظفة/معلمة جديدة بشكل فوري يدوي (CORS Safe GET Request)
+        function addNewStaffMember() {
+            const name = document.getElementById('new-staff-name').value.trim();
+            const rawId = document.getElementById('new-staff-id').value.trim();
+            const type = document.getElementById('new-staff-type').value;
+
+            const id = convertArabicNumerals(rawId);
+
+            if (!name || !id) {
+                showToast("⚠️ يرجى تعبئة كافة حقول بيانات المعلمة لحفظها!", "warning");
+                return;
+            }
+
+            if (state.staff[id]) {
+                showToast("⚠️ السجل المدني المدخل مسجل مسبقاً في النظام لمعلمة أخرى!", "warning");
+                return;
+            }
+
+            const newMember = { id: id, name: name, type: type, token: null };
+
+            // الإرسال السحابي لجداول جوجل (GET-only لضمان عبور CORS)
+            if (state.googleSheetUrl) {
+                showToast("🔄 جاري إدراج المعلمة سحابياً...", "info");
+                const url = `${state.googleSheetUrl}?action=addStaff&id=${encodeURIComponent(newMember.id)}&name=${encodeURIComponent(newMember.name)}&type=${encodeURIComponent(newMember.type)}&token=`;
+                
+                fetch(url, { method: 'GET', redirect: 'follow' })
+                .then(res => res.json())
+                .then(data => {
+                    state.staff[id] = newMember;
+                    saveState();
+                    showToast(`✅ تم إدراج ${name} ومزامنتها مع جدول جوجل بنجاح.`, "success");
+                    renderAdminDashboard();
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast("❌ حدث خطأ في الاتصال السحابي بجوجل؛ تم الإدراج محلياً فقط مؤقتاً.", "warning");
+                    state.staff[id] = newMember;
+                    saveState();
+                    renderAdminDashboard();
+                });
+            } else {
+                state.staff[id] = newMember;
+                saveState();
+                showToast(`✅ تم إدراج ${name} بنجاح كمنسوبة جديدة في المدرسة محلياً.`, "success");
+                renderAdminDashboard();
+            }
+
+            // تصفير حقول الإدخال
+            document.getElementById('new-staff-name').value = '';
+            document.getElementById('new-staff-id').value = '';
+        }
+
+        // تشغيل واختيار ملف الإكسل برمجياً
+        function triggerExcelFileInput() {
+            document.getElementById('excel-file-input').click();
+        }
+
+        // معالجة ورفع وقراءة ملف الإكسل في المتصفح باستخدام SheetJS
+        function handleExcelImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('excel-file-label').innerText = `جاري قراءة وتحليل: ${file.name}`;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (jsonData.length === 0) {
+                        showToast("⚠️ ملف الإكسل فارغ أو غير منسق بشكل صحيح!", "warning");
+                        resetExcelInputLabel();
+                        return;
+                    }
+
+                    let importCount = 0;
+                    let skipCount = 0;
+
+                    jsonData.forEach(row => {
+                        const rawId = String(row['السجل المدني'] || row['الهوية'] || row['رقم الهوية'] || row['ID'] || row['id'] || row['National ID'] || '').trim();
+                        const id = convertArabicNumerals(rawId);
+                        const name = String(row['الاسم بالكامل'] || row['الاسم'] || row['الاسم الثلاثي'] || row['Name'] || row['name'] || '').trim();
+                        let typeRaw = String(row['الفئة'] || row['نوع الدوام'] || row['Type'] || row['type'] || 'contract').trim();
+
+                        if (!id || !name) {
+                            skipCount++;
+                            return;
+                        }
+
+                        if (state.staff[id]) {
+                            skipCount++;
+                            return;
+                        }
+
+                        let finalType = 'contract';
+                        if (typeRaw.includes('رسمي') || typeRaw.includes('permanent') || typeRaw.includes('رسمية')) {
+                            finalType = 'permanent';
+                        }
+
+                        const newMember = { id: id, name: name, type: finalType, token: null };
+                        state.staff[id] = newMember;
+
+                        // رفعها لجوجل بصيغة GET-only الآمنة
+                        if (state.googleSheetUrl) {
+                            const url = `${state.googleSheetUrl}?action=addStaff&id=${encodeURIComponent(newMember.id)}&name=${encodeURIComponent(newMember.name)}&type=${encodeURIComponent(newMember.type)}&token=`;
+                            fetch(url, { method: 'GET', redirect: 'follow' }).catch(err => console.error("Sync error in excel row: ", err));
+                        }
+
+                        importCount++;
+                    });
+
+                    saveState();
+                    renderAdminDashboard();
+                    showToast(`🎉 تم استيراد عدد (${importCount}) معلمة بنجاح وتوثيقها بجدول البيانات!`, "success");
+                    
+                } catch (error) {
+                    console.error(error);
+                    showToast("❌ حدث خطأ أثناء تحليل ملف الإكسل； يرجى التأكد من سلامة صياغته وترميزه.", "warning");
+                }
+                resetExcelInputLabel();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // تصفير مؤشر رفع ملفات الإكسل بعد المعالجة
+        function resetExcelInputLabel() {
+            document.getElementById('excel-file-input').value = '';
+            document.getElementById('excel-file-label').innerText = 'انقري لرفع وتحديد ملف الإكسل';
+        }
+
+        // تحميل نموذج إكسل تجريبي جاهز
+        function downloadExcelTemplate() {
+            const templateData = [
+                { "السجل المدني": "1004111222", "الاسم بالكامل": "أ. ميمونة الحربي", "الفئة": "بند عقود" },
+                { "السجل المدني": "1004333444", "الاسم بالكامل": "أ. حنان الحربي", "الفئة": "رسمي" }
+            ];
+
+            const worksheet = XLSX.utils.json_to_sheet(templateData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "منسوبات المدرسة");
+
+            XLSX.writeFile(workbook, "نموذج_استيراد_المنسوبات.xlsx");
+            showToast("📥 تم تحميل نموذج الإكسل الجاهز. يمكنك تعبئته ورفعه الآن مباشرة.", "success");
+        }
+
+        // حذف موظفة بشكل نهائي (CORS Safe GET Request)
+        function deleteStaffMember(id) {
+            const memberName = state.staff[id].name;
+            
+            const modal = document.getElementById('confirm-modal');
+            const title = document.getElementById('confirm-title');
+            const message = document.getElementById('confirm-message');
+            const btn = document.getElementById('confirm-submit-btn');
+
+            title.innerText = "حذف منسوبة نهائياً";
+            message.innerText = `هل أنتِ متأكدة من حذف الموظفة (${memberName}) من سجلات ومنظومة المدرسة؟`;
+            
+            btn.onclick = function() {
+                if (state.googleSheetUrl) {
+                    showToast("🔄 جاري إزالة الموظفة سحابياً من جداول جوجل...", "info");
+                    const url = `${state.googleSheetUrl}?action=deleteStaff&id=${encodeURIComponent(id)}`;
+                    
+                    fetch(url, { method: 'GET', redirect: 'follow' })
+                    .then(res => res.json())
+                    .then(() => {
+                        delete state.staff[id];
+                        saveState();
+                        showToast(`🗑️ تم حذف ملف الموظفة ${memberName} بنجاح من جداول جوجل والموقع.`, "success");
+                        closeConfirmModal();
+                        renderAdminDashboard();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        delete state.staff[id];
+                        saveState();
+                        showToast(`🗑️ تم الحذف محلياً؛ واجهنا مشكلة اتصال سحابي بالخادم.`, "warning");
+                        closeConfirmModal();
+                        renderAdminDashboard();
+                    });
+                } else {
+                    delete state.staff[id];
+                    saveState();
+                    showToast(`🗑️ تم حذف ملف الموظفة ${memberName} بنجاح من النظام.`, "success");
+                    closeConfirmModal();
+                    renderAdminDashboard();
+                }
+            };
+            modal.classList.remove('hidden');
+        }
+
+        // حذف حركة حضور من مسير الجدول (CORS Safe GET Request)
+        function deleteAttendanceRecord(index) {
+            const record = state.attendance[index];
+            
+            const modal = document.getElementById('confirm-modal');
+            const title = document.getElementById('confirm-title');
+            const message = document.getElementById('confirm-message');
+            const btn = document.getElementById('confirm-submit-btn');
+
+            title.innerText = "شطب حركة دوام";
+            message.innerText = `هل ترغبين بشطب حركة الـ (${record.action}) الخاصة بـ (${record.name}) لليوم؟`;
+            
+            btn.onclick = function() {
+                if (state.googleSheetUrl) {
+                    showToast("🔄 جاري إلغاء الحركة سحابياً...", "info");
+                    const url = `${state.googleSheetUrl}?action=deleteAttendance&id=${encodeURIComponent(record.id)}&date=${encodeURIComponent(record.date)}&time=${encodeURIComponent(record.time)}&actionType=${encodeURIComponent(record.action)}`;
+                    
+                    fetch(url, { method: 'GET', redirect: 'follow' })
+                    .then(res => res.json())
+                    .then(() => {
+                        state.attendance.splice(index, 1);
+                        saveState();
+                        showToast("🗑️ تم شطب حركة الدوام المحددة سحابياً ومحلياً بنجاح.", "success");
+                        closeConfirmModal();
+                        renderAdminDashboard();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        state.attendance.splice(index, 1);
+                        saveState();
+                        showToast("🗑️ تم شطب الحركة محلياً مع تعذر المزامنة المؤقتة.", "warning");
+                        closeConfirmModal();
+                        renderAdminDashboard();
+                    });
+                } else {
+                    state.attendance.splice(index, 1);
+                    saveState();
+                    showToast("🗑️ تم شطب حركة الدوام المحددة بنجاح.", "success");
+                    closeConfirmModal();
+                    renderAdminDashboard();
+                }
+            };
+            modal.classList.remove('hidden');
+        }
+
+        // فتح ملف إعادة ضبط المصنع الكامل
+        function triggerResetSystem() {
+            const modal = document.getElementById('confirm-modal');
+            const title = document.getElementById('confirm-title');
+            const message = document.getElementById('confirm-message');
+            const btn = document.getElementById('confirm-submit-btn');
+
+            title.innerText = "إعادة ضبط المصنع الكامل للنظام 🚨";
+            message.innerText = "تحذير أمني خطير: هل أنتِ متأكدة من رغبتكِ في مسح كافة بيانات المعلمات والمنسوبات، تصفير سجلات الحضور بالكامل، وإلغاء تهيئات التوقيت الجغرافي والعودة لضبط المصنع الأصلي؟";
+            
+            btn.onclick = executeSystemReset;
+            modal.classList.remove('hidden');
+        }
+
+        // تنفيذ مسح البيانات الفعلي (CORS Safe GET Request)
+        function executeSystemReset() {
+            if (state.googleSheetUrl) {
+                showToast("🔄 جاري إرسال أمر تصفير سحابة جداول جوجل بالكامل...", "info");
+                const url = `${state.googleSheetUrl}?action=resetSystem`;
+                fetch(url, { method: 'GET', redirect: 'follow' }).catch(err => console.error("Reset spreadsheet error: ", err));
+            }
+
+            localStorage.removeItem('school_attendance_system_state');
+            state = JSON.parse(JSON.stringify(defaultState));
+            state.activeRole = 'teacher';
+            
+            saveState();
+            closeConfirmModal();
+            logoutAdmin();
+            
+            document.getElementById('config-checkin-start').value = state.timings.checkInStart;
+            document.getElementById('config-checkin-late').value = state.timings.checkInLate;
+            document.getElementById('config-checkout').value = state.timings.checkOutTime;
+
+            document.getElementById('config-school-lat').value = state.schoolLocation.lat;
+            document.getElementById('config-school-lng').value = state.schoolLocation.lng;
+            document.getElementById('config-school-radius').value = state.schoolLocation.radius;
+            document.getElementById('config-sheet-url').value = '';
+
+            SCHOOL_LAT = state.schoolLocation.lat;
+            SCHOOL_LNG = state.schoolLocation.lng;
+            SCHOOL_RADIUS = state.schoolLocation.radius;
+
+            updateTeacherPortalLocationUI();
+            updateGoogleSheetSyncUI(false);
+            renderAdminDashboard();
+            
+            showToast("🚨 تم إعادة ضبط المصنع، تطهير المنظومة، وتصفير جميع السجلات بنجاح!", "warning");
+        }
+
+        // دالة حساب دقائق الفارق الزمني (HH:MM)
+        function calculateMinutesDifference(actualTimeStr, targetTimeStr) {
+            const [actH, actM] = actualTimeStr.split(':').map(Number);
+            const [tarH, tarM] = targetTimeStr.split(':').map(Number);
+            
+            const actualTotal = actH * 60 + actM;
+            const targetTotal = tarH * 60 + tarM;
+            
+            return actualTotal - targetTotal;
+        }
+
+        // معالجة تسجيل حركة حضور أو انصراف (CORS Safe GET Request)
+        function handleCheckIn(actionType) {
+            const rawIdInput = document.getElementById('teacher-id-input').value.trim();
+            const responseBox = document.getElementById('mobile-response');
+
+            const idInput = convertArabicNumerals(rawIdInput);
+
+            if (!idInput) {
+                showMobileResponse("⚠️ الرجاء كتابة رقم السجل المدني للتحقق!", "amber");
+                return;
+            }
+
+            const member = state.staff[idInput];
+            if (!member) {
+                showMobileResponse("❌ عذراً، هذا السجل المدني غير مسجل في منظومة المدرسة البديلة.", "rose");
+                return;
+            }
+
+            // أمن الحماية 1: التحقق من وضع طوارئ الرسميات
+            if (member.type === 'permanent' && !state.emergencyMode) {
+                showMobileResponse("🛑 نظام حضوري الوزاري مستقر ويعمل. هذا النظام متاح كطوارئ فقط للرسميات.", "amber");
+                return;
+            }
+
+            // أمن الحماية 2: التحقق من الإحداثيات الجغرافية (الموقع GPS)
+            if (state.gpsStatus !== 'inside') {
+                showMobileResponse(`🚗 تسجيل فاشل! أنتِ خارج نطاق المدرسة جغرافياً. يرجى التواجد بالداخل للتحضير.`, "rose");
+                return;
+            }
+
+            // أمن الحماية 3: التحقق من ربط هاتف المعلمة
+            const currentToken = state.useIncorrectDevice ? 'fake-token-stolen' : 'device-token-' + member.id + '-original';
+            
+            if (member.token === null) {
+                member.token = currentToken;
+                saveState();
+                
+                // تحديث بصمة الهاتف سحابياً ومحلياً (GET-only)
+                if (state.googleSheetUrl) {
+                    const url = `${state.googleSheetUrl}?action=updateToken&id=${encodeURIComponent(member.id)}&token=${encodeURIComponent(currentToken)}`;
+                    fetch(url, { method: 'GET', redirect: 'follow' }).catch(err => console.error(err));
+                }
+                showToast(`🔒 تم ربط وتشفير حساب ${member.name} بهذا الهاتف بنجاح لأول مرة.`, "success");
+            } else if (member.token !== currentToken) {
+                showMobileResponse("🛑 فشل التحقق! الهاتف غير مسجل لحسابك. يمنع التحضير بالإنابة.", "rose");
+                return;
+            }
+
+            // تحديد توقيت الحركة الحالي
+            let checkTime = new Date();
+            if (state.customSimulatedTime) {
+                const [h, m] = state.customSimulatedTime.split(':').map(Number);
+                checkTime.setHours(h);
+                checkTime.setMinutes(m);
+            }
+            
+            let hours = checkTime.getHours();
+            const minutes = checkTime.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'م' : 'ص';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const timeStr = `${hours}:${minutes} ${ampm}`;
+            const dateStr = checkTime.toISOString().split('T')[0];
+
+            const actualHour24 = checkTime.getHours();
+            const actualTime24 = `${actualHour24.toString().padStart(2,'0')}:${minutes}`;
+
+            // حساب حالة التأخر أو الانصراف المبكر تلقائياً
+            let finalStatus = "منتظم";
+            if (actionType === 'حضور') {
+                const lateDiff = calculateMinutesDifference(actualTime24, state.timings.checkInLate);
+                if (lateDiff > 0) {
+                    finalStatus = `تأخير ${lateDiff} دقيقة`;
+                }
+            } else if (actionType === 'انصراف') {
+                const earlyDiff = calculateMinutesDifference(state.timings.checkOutTime, actualTime24);
+                if (earlyDiff > 0) {
+                    finalStatus = `خروج مبكر ${earlyDiff} دقيقة`;
+                }
+            }
+
+            const record = {
+                id: member.id,
+                name: member.name,
+                type: member.type,
+                date: dateStr,
+                time: timeStr,
+                action: actionType,
+                method: "ذاتي (جداول جوجل)",
+                status: finalStatus,
+                reason: "-"
+            };
+
+            const isDuplicate = state.attendance.some(r => r.id === member.id && r.date === dateStr && r.action === actionType);
+            if (isDuplicate) {
+                showMobileResponse(`⚠️ تم تسجيل حركة ${actionType} لهذا اليوم مسبقاً بنجاح!`, "amber", member, actionType, timeStr, finalStatus);
+                return;
+            }
+
+            // معالجة تسجيل الحركة وإرسالها لجداول جوجل (GET-only لضمان عبور CORS)
+            if (state.googleSheetUrl) {
+                showMobileResponse("🔄 جاري معالجة وتوثيق الحركة سحابياً...", "amber");
+                
+                const url = `${state.googleSheetUrl}?action=addAttendance&id=${encodeURIComponent(record.id)}&name=${encodeURIComponent(record.name)}&date=${encodeURIComponent(record.date)}&time=${encodeURIComponent(record.time)}&actionType=${encodeURIComponent(record.action)}&method=${encodeURIComponent(record.method)}&status=${encodeURIComponent(record.status)}&reason=${encodeURIComponent(record.reason)}`;
+
+                fetch(url, { method: 'GET', redirect: 'follow' })
+                .then(res => res.json())
+                .then(data => {
+                    state.attendance.unshift(record);
+                    saveState();
+                    showMobileResponse(`✅ تم تسجيل ${actionType} بنجاح ومطابقة بصمة جوالك الحيوية سحابياً! (${finalStatus})`, "emerald", member, actionType, timeStr, finalStatus);
+                    showToast(`📝 قامت ${member.name} برصد ${actionType} ذاتي سحابياً.`, "success");
+                    renderAdminDashboard();
+                })
+                .catch(err => {
+                    console.error("Fetch attendance error: ", err);
+                    // حفظ كطابور انتظار محلي
+                    state.offlineQueue.push(record);
+                    state.attendance.unshift(record);
+                    saveState();
+                    showMobileResponse(`💾 تم التحضير محلياً بنجاح؛ فشل الاتصال المؤقت بسحابة جوجل. سيتم المزامنة تلقائياً.`, "amber", member, actionType, timeStr, finalStatus);
+                    updateOfflineIndicator();
+                    renderAdminDashboard();
+                });
+            } else {
+                // الوضع المحلي
+                state.attendance.unshift(record);
+                saveState();
+                showMobileResponse(`✅ تم تسجيل ${actionType} محلياً بنجاح ومطابقة بصمة جوالك الحيوية! (${finalStatus})`, "emerald", member, actionType, timeStr, finalStatus);
+                showToast(`📝 قامت ${member.name} برصد ${actionType} محلياً.`, "success");
+                renderAdminDashboard();
+            }
+        }
+
+        // عرض رسالة الاستجابة على هاتف المعلمة بشكل تفاعلي وتوليد رابط الواتساب
+        function showMobileResponse(text, type, member = null, actionType = "", timeStr = "", finalStatus = "") {
+            const box = document.getElementById('mobile-response');
+            box.className = "p-3 rounded-xl text-center text-xs font-semibold leading-relaxed animate-fade-in flex flex-col gap-2";
+            
+            if(type === 'emerald') box.classList.add('bg-emerald-50', 'text-emerald-700', 'border', 'border-emerald-200');
+            if(type === 'rose') box.classList.add('bg-rose-50', 'text-rose-700', 'border', 'border-rose-200');
+            if(type === 'amber') box.classList.add('bg-amber-50', 'text-amber-700', 'border', 'border-amber-200');
+            
+            box.innerHTML = `<span>${text}</span>`;
+
+            // في حال رصد التحضير بنجاح، بناء زر الإرسال للوكيلة عبر الواتساب لتسهيل التحضير الفردي
+            if (member && (type === 'emerald' || type === 'amber')) {
+                const today = new Date().toLocaleDateString('ar-SA');
+                const whatsappMessage = `*إشعار الحضور والانصراف الذكي* 
+-------------------------------
+*الابتدائية الثامنة والعشرون بالقريات*
+*المنسوبة:* ${member.name}
+*السجل المدني:* ${member.id}
+*الحركة:* تسجيل ${actionType} ☀️
+*اليوم والتاريخ:* ${today}
+*وقت الرصد:* ${timeStr}
+*حالة الحركة:* ${finalStatus}
+*التحقق:* مطابقة ذاتية آمنة ومطابقة لبصمة الجوال الجغرافية وسحابة جوجل المباشرة ✅`;
+
+                const encodedText = encodeURIComponent(whatsappMessage);
+                const whatsappBtn = document.createElement("a");
+                whatsappBtn.href = `https://api.whatsapp.com/send?text=${encodedText}`;
+                whatsappBtn.target = "_blank";
+                whatsappBtn.className = "mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-[10px] flex items-center justify-center gap-1.5 transition-all shadow-sm";
+                whatsappBtn.innerHTML = `<i class="fa-brands fa-whatsapp text-sm animate-pulse"></i> <span>إرسال إشعار تأكيد التحضير للوكيلة 💬</span>`;
+                box.appendChild(whatsappBtn);
+            }
+
+            box.classList.remove('hidden');
+        }
+
+        // فتح وإغلاق مودال تسجيل دخول الوكيلة
+        function openAdminLoginModal() {
+            document.getElementById('admin-password-input').value = '';
+            document.getElementById('admin-login-modal').classList.remove('hidden');
+        }
+
+        function closeAdminLoginModal() {
+            document.getElementById('admin-login-modal').classList.add('hidden');
+        }
+
+        // إرسال كود التحقق السري لدخول لوحة التحكم الإدارية
+        function submitAdminLogin() {
+            const pin = document.getElementById('admin-password-input').value.trim();
+            
+            if (pin === state.adminPin) {
+                closeAdminLoginModal();
+                showToast("🔓 تم التحقق بنجاح من الهوية الإدارية. جاري فتح لوحة التحكم...", "success");
+                switchToAdminView();
+            } else {
+                showToast("⚠️ الرمز السري الإداري الذي أدخلته غير صحيح. يرجى إعادة المحاولة.", "warning");
+            }
+        }
+
+        // حفظ وتحديث رمز الدخول الإداري الجديد
+        function saveAdminPassword() {
+            const newPin = document.getElementById('config-admin-password').value.trim();
+            if (!newPin) {
+                showToast("⚠️ يرجى إدخال رمز سري صالح وغير فارغ!", "warning");
+                return;
+            }
+            if (newPin.length < 4) {
+                showToast("⚠️ يجب أن يتكون الرمز السري من 4 خانات على الأقل!", "warning");
+                return;
+            }
+            
+            state.adminPin = newPin;
+            saveState();
+            document.getElementById('config-admin-password').value = '';
+            showToast("🔒 تم تغيير الرمز السري للإدارة بنجاح وحفظه بالذاكرة الآمنة.", "success");
+        }
+
+        // تفعيل شاشة الوكيلة وإظهار أدوات المحاكاة
+        function switchToAdminView() {
+            state.activeRole = 'admin';
+            saveState();
+            
+            document.getElementById('view-teacher').classList.add('hidden');
+            document.getElementById('public-header').classList.add('hidden');
+            document.getElementById('public-footer').classList.add('hidden');
+            
+            document.getElementById('view-admin').classList.remove('hidden');
+            document.getElementById('simulation-bar').classList.remove('hidden');
+            
+            renderAdminDashboard();
+        }
+
+        // تسجيل خروج الإدارة والعودة التلقائية لواجهة المعلمة النظيفة
+        function logoutAdmin() {
+            state.activeRole = 'teacher';
+            saveState();
+            
+            document.getElementById('view-admin').classList.add('hidden');
+            document.getElementById('simulation-bar').classList.add('hidden');
+            
+            document.getElementById('view-teacher').classList.remove('hidden');
+            document.getElementById('public-header').classList.remove('hidden');
+            document.getElementById('public-footer').classList.remove('hidden');
+            
+            showToast("ℹ️ تم تسجيل الخروج من الإدارة. الواجهة الآن جاهزة لتحضير المعلمات فقط.", "info");
+        }
+
+        // محاكاة تغيير إحداثيات الـ GPS وتأثيرها الفوري على واجهة الجوال
+        function updateSimulationGPS() {
+            const select = document.getElementById('sim-gps');
+            state.gpsStatus = select.value;
+
+            const badgeIcon = document.getElementById('badge-gps-icon');
+            const badgeText = document.getElementById('badge-gps-text');
+
+            if (state.gpsStatus === 'inside') {
+                badgeIcon.className = "w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[9px]";
+                badgeText.innerText = "داخل المدرسة";
+                badgeText.className = "text-[10px] font-bold text-emerald-600";
+                showToast("📍 تمت محاكاة انتقال المعلمة لداخل النطاق الجغرافي للمدرسة.", "info");
+            } else {
+                badgeIcon.className = "w-5 h-5 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center text-[9px]";
+                badgeText.innerText = "خارج النطاق الجغرافي";
+                badgeText.className = "text-[10px] font-bold text-rose-600";
+                showToast("🚗 تمت محاكاة خروج المعلمة من النطاق الجغرافي للمدرسة.", "warning");
+            }
+        }
+
+        // محاكاة حالة الإنترنت وانقطاع الشبكة
+        function toggleNetworkSim() {
+            state.isOnline = !state.isOnline;
+            const btn = document.getElementById('sim-network');
+            const mobileWifi = document.getElementById('mobile-wifi-icon');
+
+            if (state.isOnline) {
+                btn.className = "flex items-center gap-1.5 font-bold text-emerald-600 transition-colors";
+                btn.innerHTML = `<i class="fa-solid fa-wifi text-emerald-500"></i><span>متصل بالشبكة</span>`;
+                mobileWifi.className = "fa-solid fa-wifi text-emerald-500";
+                showToast("🌐 تم استعادة شبكة الإنترنت وتوفير الاتصال السحابي الرئيسي.", "success");
+                syncOfflineQueue();
+            } else {
+                btn.className = "flex items-center gap-1.5 font-bold text-rose-600 transition-colors";
+                btn.innerHTML = `<i class="fa-solid fa-wifi-slash text-rose-500"></i><span>منقطع عن الشبكة</span>`;
+                mobileWifi.className = "fa-solid fa-wifi-slash text-rose-400";
+                showToast("⚠️ تم انقطاع اتصال الإنترنت! ستقوم المعلمة بالتحضير محلياً بنجاح.", "warning");
+            }
+        }
+
+        // محاكاة بصمة وحماية أجهزة المعلمة لمنع التحضير بالإنابة
+        function changeSimDevice() {
+            state.useIncorrectDevice = !state.useIncorrectDevice;
+            const btn = document.getElementById('sim-device');
+            const badgeIcon = document.getElementById('badge-device-icon');
+            const badgeText = document.getElementById('badge-device-text');
+
+            if (!state.useIncorrectDevice) {
+                btn.innerHTML = `<i class="fa-solid fa-fingerprint"></i><span>جوال المعلمة الأصلي</span>`;
+                badgeIcon.className = "w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[9px]";
+                badgeText.innerText = "آمن ومطابق";
+                badgeText.className = "text-[10px] font-bold text-emerald-600";
+                showToast("📱 تم التبديل لجوال المعلمة الأصلي المطابق لبصمتها التشفيرية.", "info");
+            } else {
+                btn.innerHTML = `<i class="fa-solid fa-mobile-button text-rose-500"></i><span class="text-rose-600">هاتف زميلة أخرى</span>`;
+                badgeIcon.className = "w-5 h-5 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center text-[9px]";
+                badgeText.innerText = "غير مطابق (جهاز آخر)";
+                badgeText.className = "text-[10px] font-bold text-rose-600";
+                showToast("🛑 محاكاة استخدام جهاز آخر لمحاولة التحضير بالإنابة!", "warning");
+            }
+        }
+
+        // عارض مباشر لاسم المعلمة فور إدخال سجلها المدني تسهيلاً للتحقق
+        function onTeacherIdChange() {
+            const rawIdInput = document.getElementById('teacher-id-input').value.trim();
+            const idInput = convertArabicNumerals(rawIdInput);
+            const preview = document.getElementById('teacher-name-preview');
+            
+            if (state.staff[idInput]) {
+                const member = state.staff[idInput];
+                const typeText = member.type === 'contract' ? 'بند عقود' : 'رسمي (طوارئ)';
+                preview.innerText = `الموظفة: ${member.name} (${typeText})`;
+                preview.className = "text-[11px] text-brand-600 font-bold mt-1 text-center min-h-[1rem]";
+            } else {
+                preview.innerText = "";
+            }
+        }
+
+        // مزانمة حركات طابور الانتظار (Offline Queue) فور استعادة الإنترنت (CORS Safe GET)
+        function syncOfflineQueue() {
+            if (state.offlineQueue.length === 0) return;
+
+            showToast(`⚙️ جاري مزامنة حركات المعلمات المسجلة أوفلاين...`, "info");
+
+            setTimeout(() => {
+                state.offlineQueue.forEach(record => {
+                    record.method = "ذاتي (سحابة جوجل مزامنة)";
+                    record.reason = "مزامنة تلقائية بعد انقطاع الإنترنت";
+                    
+                    const isDuplicate = state.attendance.some(r => r.id === record.id && r.date === record.date && r.action === record.action);
+                    if (!isDuplicate) {
+                        state.attendance.unshift(record);
+                        if (state.googleSheetUrl) {
+                            const url = `${state.googleSheetUrl}?action=addAttendance&id=${encodeURIComponent(record.id)}&name=${encodeURIComponent(record.name)}&date=${encodeURIComponent(record.date)}&time=${encodeURIComponent(record.time)}&actionType=${encodeURIComponent(record.action)}&method=${encodeURIComponent(record.method)}&status=${encodeURIComponent(record.status)}&reason=${encodeURIComponent(record.reason)}`;
+                            fetch(url, { method: 'GET', redirect: 'follow' }).catch(e => console.error(e));
+                        }
+                    }
+                });
+
+                saveState();
+                showToast(`🎉 تم مزامنة عدد (${state.offlineQueue.length}) حركات مسجلة أوفلاين بنجاح مع جداول جوجل.`, "success");
+                state.offlineQueue = [];
+                updateOfflineIndicator();
+                renderAdminDashboard();
+            }, 1500);
+        }
+
+        // تحديث منبه وجود حركات بانتظار المزامنة في لوحة تحكم الوكيل
+        function updateOfflineIndicator() {
+            const indicator = document.getElementById('offline-sync-indicator');
+            const count = document.getElementById('sync-queue-count');
+
+            if (state.offlineQueue.length > 0) {
+                count.innerText = state.offlineQueue.length;
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+
+        // تحديث وإعادة رسم لوحة المتابعة الإدارية لوكيل المدرسة بالكامل
+        function renderAdminDashboard() {
+            document.getElementById('total-staff-count').innerText = Object.keys(state.staff).length;
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayAttendance = state.attendance.filter(r => r.date === todayStr);
+            
+            const presentIds = new Set(todayAttendance.filter(r => r.action === 'حضور').map(r => r.id));
+            document.getElementById('stat-present').innerText = presentIds.size;
+
+            let totalActiveStaff = 0;
+            let absentCount = 0;
+            for (const key in state.staff) {
+                const member = state.staff[key];
+                if (member.type === 'contract' || (member.type === 'permanent' && state.emergencyMode)) {
+                    totalActiveStaff++;
+                    if (!presentIds.has(member.id)) {
+                        absentCount++;
+                    }
+                }
+            }
+            document.getElementById('stat-absent').innerText = absentCount;
+
+            let lateCount = 0;
+            todayAttendance.forEach(record => {
+                if (record.action === 'حضور' && record.status.includes('تأخير')) {
+                    lateCount++;
+                }
+            });
+            document.getElementById('stat-late').innerText = lateCount;
+
+            const emergencyLabel = document.getElementById('stat-emergency-label');
+            const emergencyIcon = document.getElementById('stat-emergency-icon');
+            const toggleSwitch = document.getElementById('toggle-emergency-switch');
+            const switchThumb = document.getElementById('emergency-switch-thumb');
+
+            if (state.emergencyMode) {
+                emergencyLabel.innerText = "نشط ومفعل طوارئ";
+                emergencyLabel.className = "text-base font-extrabold text-rose-600";
+                emergencyIcon.className = "w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center text-xl animate-pulse";
+                toggleSwitch.className = "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-rose-600";
+                switchThumb.className = "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-5";
+            } else {
+                emergencyLabel.innerText = "معطّل (الوضع العادي)";
+                emergencyLabel.className = "text-base font-extrabold text-slate-800";
+                emergencyIcon.className = "w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center text-xl";
+                toggleSwitch.className = "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-slate-600";
+                switchThumb.className = "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0";
+            }
+
+            // تحديث خيار الموظفات المستهدفة في منشئ التقارير المخصصة
+            const reportStaffSelect = document.getElementById('report-staff-select');
+            const currentSelectedValue = reportStaffSelect.value;
+            reportStaffSelect.innerHTML = '';
+            
+            for (const key in state.staff) {
+                const member = state.staff[key];
+                const opt = document.createElement('option');
+                opt.value = member.id;
+                opt.text = `${member.name} (سجل: ${member.id})`;
+                reportStaffSelect.appendChild(opt);
+            }
+            if (currentSelectedValue && state.staff[currentSelectedValue]) {
+                reportStaffSelect.value = currentSelectedValue;
+            }
+
+            // تحديث قائمة الموظفات والأجهزة وبصمة الجوال بالعمود الأيمن
+            const staffListContainer = document.getElementById('staff-admin-list');
+            staffListContainer.innerHTML = '';
+
+            const searchQuery = (document.getElementById('search-staff-input')?.value || '').trim().toLowerCase();
+
+            for (const key in state.staff) {
+                const member = state.staff[key];
+
+                if (searchQuery) {
+                    const matchesName = member.name.toLowerCase().includes(searchQuery);
+                    const matchesId = member.id.toLowerCase().includes(searchQuery);
+                    if (!matchesName && !matchesId) {
+                        continue;
+                    }
+                }
+                
+                const typeLabel = member.type === 'contract' ? 'بند عقود' : 'رسمي (طوارئ)';
+                const badgeClass = member.type === 'contract' ? 'bg-indigo-50 text-indigo-700' : 'bg-amber-50 text-amber-700';
+                
+                const hasDeviceBound = member.token !== null;
+                const deviceStatusText = hasDeviceBound ? '✅ مرتبط بمفتاح آمن' : '❌ غير مرتبط بهاتف';
+                const deviceStatusClass = hasDeviceBound ? 'text-emerald-600 font-bold' : 'text-slate-400 font-medium';
+
+                staffListContainer.innerHTML += `
+                    <div class="p-3.5 border border-slate-100 rounded-xl bg-slate-50 hover:bg-slate-100/50 transition-colors space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="font-bold text-slate-800 text-sm block">${member.name}</span>
+                                <span class="text-[10px] text-slate-400">سجل: ${member.id}</span>
+                            </div>
+                            <div class="flex flex-col items-end gap-1">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeClass}">${typeLabel}</span>
+                                <button onclick="deleteStaffMember('${member.id}')" class="text-[10px] text-rose-500 hover:text-rose-700 font-bold transition-all">حذف 🗑️</button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between text-xs border-t border-slate-100/70 pt-2">
+                            <span class="${deviceStatusClass} text-[11px]">${deviceStatusText}</span>
+                            ${hasDeviceBound ? `
+                                <button onclick="triggerResetDevice('${member.id}', '${member.name}')" class="text-[10px] bg-red-50 text-red-700 font-bold px-2.5 py-1 rounded-lg hover:bg-red-100 transition-colors">
+                                    فك هاتفها 🔓
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <!-- أزرار التحضير الاستثنائي -->
+                        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100/70">
+                            <button onclick="openManualCheckInModal('${member.id}', '${member.name}', 'حضور')" class="text-[11px] font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 py-1 px-2 rounded-lg text-center transition-colors">
+                                <i class="fa-solid fa-square-check text-emerald-600"></i> تحضير إداري
+                            </button>
+                            <button onclick="openManualCheckInModal('${member.id}', '${member.name}', 'انصراف')" class="text-[11px] font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 py-1 px-2 rounded-lg text-center transition-colors">
+                                <i class="fa-solid fa-moon text-slate-500"></i> انصراف إداري
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // تحديث جدول مسير الحركات اللحظية الفعلي بالعمود الأيسر
+            const tableBody = document.getElementById('attendance-feed-table');
+            tableBody.innerHTML = '';
+
+            if (state.attendance.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center p-8 text-slate-400 font-medium">
+                            <i class="fa-solid fa-folder-open text-3xl mb-2 block"></i>
+                            لم تسجل أي حركة حضور أو انصراف اليوم حتى الآن.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            state.attendance.forEach((record, index) => {
+                const actionBadgeClass = record.action === 'حضور' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-700 border-slate-200';
+                const methodBadgeClass = record.method.includes('إداري') ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-blue-50 text-blue-700 border-blue-200';
+                
+                let statusBadge = `<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-600">منتظم</span>`;
+                if (record.status.includes('تأخير') || record.status.includes('مبكر')) {
+                    statusBadge = `<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">${record.status}</span>`;
+                }
+
+                tableBody.innerHTML += `
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="p-4 font-bold text-slate-800 text-sm">${record.name} <span class="text-[10px] text-slate-400 block font-normal">سجل: ${record.id} | ${record.type === 'contract' ? 'بند عقود' : 'رسمي'}</span></td>
+                        <td class="p-4 text-center">
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold border ${actionBadgeClass}">${record.action}</span>
+                        </td>
+                        <td class="p-4 font-bold text-slate-800 font-mono">${record.time} <span class="text-[10px] text-slate-400 block font-normal">${record.date}</span></td>
+                        <td class="p-4">
+                            <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${methodBadgeClass}">
+                                ${record.method}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center">${statusBadge}</td>
+                        <td class="p-4 text-xs text-slate-500 font-medium max-w-[150px] truncate" title="${record.reason}">${record.reason}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteAttendanceRecord(${index})" class="text-rose-600 hover:text-rose-800 font-bold text-xs"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // تغيير وضع طوارئ المدارس بالكامل بكبسة زر
+        function toggleEmergencyMode() {
+            state.emergencyMode = !state.emergencyMode;
+            saveState();
+            renderAdminDashboard();
+            
+            if (state.emergencyMode) {
+                showToast("🚨 تم تفعيل خطة الطوارئ بنجاح! متاح للرسميات الآن التحضير من النظام البديل.", "warning");
+            } else {
+                showToast("ℹ️ تم إلغاء تفعيل وضع الطوارئ؛ النظام عاد مخصصاً فقط لمعلمات بند العقود.", "info");
+            }
+        }
+
+        // نافذة تأكيد الإجراء الإداري لإلغاء ربط هاتف المعلمة (CORS Safe GET)
+        let currentResetTargetId = null;
+        function triggerResetDevice(staffId, staffName) {
+            currentResetTargetId = staffId;
+            
+            const modal = document.getElementById('confirm-modal');
+            const title = document.getElementById('confirm-title');
+            const message = document.getElementById('confirm-message');
+            const btn = document.getElementById('confirm-submit-btn');
+
+            title.innerText = "فك ارتباط وبصمة الهاتف";
+            message.innerText = `هل أنتِ متأكدة من فك ارتباط الهاتف المسجل للمعلمة (${staffName})؟`;
+            
+            btn.onclick = executeDeviceReset;
+            modal.classList.remove('hidden');
+        }
+
+        function executeDeviceReset() {
+            if (currentResetTargetId && state.staff[currentResetTargetId]) {
+                const member = state.staff[currentResetTargetId];
+                
+                if (state.googleSheetUrl) {
+                    showToast("🔄 جاري إرسال التحديث لسحابة جداول جوجل...", "info");
+                    const url = `${state.googleSheetUrl}?action=updateToken&id=${encodeURIComponent(member.id)}&token=`;
+                    
+                    fetch(url, { method: 'GET', redirect: 'follow' })
+                    .then(() => {
+                        member.token = null;
+                        saveState();
+                        showToast(`🔓 تم فك ارتباط الهاتف القديم للمعلمة ${member.name} بنجاح.`, "success");
+                        closeConfirmModal();
+                        renderAdminDashboard();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        member.token = null;
+                        saveState();
+                        showToast(`🔓 تم فك الارتباط محلياً مع وجود مشكلة اتصال سحابي.`, "warning");
+                        closeConfirmModal();
+                        renderAdminDashboard();
+                    });
+                } else {
+                    member.token = null;
+                    saveState();
+                    showToast(`🔓 تم فك ارتباط الهاتف القديم للمعلمة ${member.name} بنجاح.`, "success");
+                    closeConfirmModal();
+                    renderAdminDashboard();
+                }
+            }
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            currentResetTargetId = null;
+        }
+
+        // فتح نافذة تسجيل حركة حضور إدارية استثنائية
+        function openManualCheckInModal(staffId, staffName, actionType) {
+            document.getElementById('modal-staff-id').value = staffId;
+            document.getElementById('modal-staff-name').value = staffName;
+            document.getElementById('modal-action-type').value = actionType;
+            
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'م' : 'ص';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            document.getElementById('modal-time').value = `${hours}:${minutes} ${ampm}`;
+
+            document.getElementById('modal-reason-select').value = "عطل تقني طارئ في الهاتف";
+            document.getElementById('modal-reason-custom').value = "";
+            document.getElementById('modal-reason-custom').classList.add('hidden');
+
+            document.getElementById('manual-checkin-modal').classList.remove('hidden');
+        }
+
+        function closeManualModal() {
+            document.getElementById('manual-checkin-modal').classList.add('hidden');
+        }
+
+        // تفعيل صندوق تبرير مخصص عند اختيار خيار سبب مخصص آخر
+        function toggleCustomReason() {
+            const select = document.getElementById('modal-reason-select');
+            const customInput = document.getElementById('modal-reason-custom');
+            
+            if (select.value === 'custom') {
+                customInput.classList.remove('hidden');
+                customInput.focus();
+            } else {
+                customInput.classList.add('hidden');
+            }
+        }
+
+        // حفظ واعتماد التحضير الإداري الاستثنائي بالتوثيق الإلزامي للسبب (CORS Safe GET)
+        function submitManualCheckIn() {
+            const staffId = document.getElementById('modal-staff-id').value;
+            const actionType = document.getElementById('modal-action-type').value;
+            const selectReason = document.getElementById('modal-reason-select').value;
+            const customReason = document.getElementById('modal-reason-custom').value.trim();
+            const timeStr = document.getElementById('modal-time').value;
+
+            let finalReason = selectReason;
+            if (selectReason === 'custom') {
+                if (!customReason) {
+                    showToast("⚠️ يرجى كتابة السبب التفصيلي في الحقل المخصص للتبرير!", "warning");
+                    return;
+                }
+                finalReason = customReason;
+            }
+
+            const member = state.staff[staffId];
+            if (member) {
+                const dateStr = new Date().toISOString().split('T')[0];
+
+                const isDuplicate = state.attendance.some(r => r.id === member.id && r.date === dateStr && r.action === actionType);
+                if (isDuplicate) {
+                    showToast(`⚠️ تم رصد حركة ${actionType} لهذه المعلمة اليوم مسبقاً!`, "warning");
+                    closeManualModal();
+                    return;
+                }
+
+                const record = {
+                    id: member.id,
+                    name: member.name,
+                    type: member.type,
+                    date: dateStr,
+                    time: timeStr,
+                    action: actionType,
+                    method: "إداري (من الوكيلة)",
+                    status: "إجراء إداري",
+                    reason: finalReason
+                };
+
+                if (state.googleSheetUrl) {
+                    showToast("🔄 جاري اعتماد الحركة الاستثنائية سحابياً...", "info");
+                    const url = `${state.googleSheetUrl}?action=addAttendance&id=${encodeURIComponent(record.id)}&name=${encodeURIComponent(record.name)}&date=${encodeURIComponent(record.date)}&time=${encodeURIComponent(record.time)}&actionType=${encodeURIComponent(record.action)}&method=${encodeURIComponent(record.method)}&status=${encodeURIComponent(record.status)}&reason=${encodeURIComponent(record.reason)}`;
+
+                    fetch(url, { method: 'GET', redirect: 'follow' })
+                    .then(res => res.json())
+                    .then(() => {
+                        state.attendance.unshift(record);
+                        saveState();
+                        showToast(`✅ تم التحضير الإداري الاستثنائي للمعلّمة ${member.name} سحابياً ومحلياً بنجاح.`, "success");
+                        closeManualModal();
+                        renderAdminDashboard();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        state.attendance.unshift(record);
+                        saveState();
+                        showToast(`✅ تم التحضير محلياً مع وجود مشكلة اتصال بسحابة جوجل.`, "warning");
+                        closeManualModal();
+                        renderAdminDashboard();
+                    });
+                } else {
+                    state.attendance.unshift(record);
+                    saveState();
+                    showToast(`✅ تم التحضير الإداري الاستثنائي للمعلّمة ${member.name} بنجاح محلياً.`, "success");
+                    closeManualModal();
+                    renderAdminDashboard();
+                }
+            }
+        }
+
+        // تصدير مسير الدوام الفعلي بصيغة Excel الشاملة والمتعددة الأوراق
+        function exportToExcel() {
+            if (state.attendance.length === 0 && Object.keys(state.staff).length === 0) {
+                showToast("⚠️ لا توجد بيانات في مسير الدوام لتصديرها حالياً!", "warning");
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            const summaryData = [
+                { "المؤشر الإداري": "تاريخ التقرير", "البيانات والقيم": todayStr },
+                { "المؤشر الإداري": "إجمالي منسوبات المدرسة بقاعدة البيانات", "البيانات والقيم": Object.keys(state.staff).length },
+                { "المؤشر الإداري": "عدد الحاضرات اليوم", "البيانات والقيم": document.getElementById('stat-present').innerText },
+                { "المؤشر الإداري": "عدد حالات الغياب المكتشف اليوم", "البيانات والقيم": document.getElementById('stat-absent').innerText },
+                { "المؤشر الإداري": "عدد حالات التأخير المكتشف اليوم", "البيانات والقيم": document.getElementById('stat-late').innerText },
+                { "المؤشر الإداري": "حالة تفعيل خطة الطوارئ للرسميات", "البيانات والقيم": state.emergencyMode ? "نشط (مفعل)" : "معطل (الوضع العادي)" }
+            ];
+            const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, wsSummary, "ملخص الدوام العام");
+
+            const movementsData = state.attendance.map(r => ({
+                "السجل المدني": r.id,
+                "الاسم بالكامل": r.name,
+                "الفئة الإدارية": r.type === 'contract' ? 'بند عقود' : 'رسمي (طوارئ)',
+                "التاريخ": r.date,
+                "الوقت": r.time,
+                "نوع الحركة": r.action,
+                "طريقة التحضير": r.method,
+                "حالة الحركة": r.status,
+                "السبب الإداري والملاحظات": r.reason
+            }));
+            const wsMovements = XLSX.utils.json_to_sheet(movementsData.length ? movementsData : [{ "ملاحظة": "لم تسجل أي حركات اليوم" }]);
+            XLSX.utils.book_append_sheet(wb, wsMovements, "مسير الحركات اللحظي");
+
+            const todayAttendance = state.attendance.filter(r => r.date === todayStr);
+            const presentIds = new Set(todayAttendance.filter(r => r.action === 'حضور').map(r => r.id));
+            const absentList = [];
+            
+            for (const id in state.staff) {
+                const member = state.staff[id];
+                if (member.type === 'contract' || (member.type === 'permanent' && state.emergencyMode)) {
+                    if (!presentIds.has(member.id)) {
+                        absentList.push({
+                            "السجل المدني": member.id,
+                            "الاسم بالكامل": member.name,
+                            "الفئة الإدارية": member.type === 'contract' ? 'بند عقود' : 'رسمي (طوارئ)',
+                            "حالة الدوام": "غائبة (لم ترصد حضور اليوم)"
+                        });
+                    }
+                }
+            }
+            const wsAbsent = XLSX.utils.json_to_sheet(absentList.length ? absentList : [{ "ملاحظة": "لا توجد حالات غياب محفوظة اليوم" }]);
+            XLSX.utils.book_append_sheet(wb, wsAbsent, "كشف الغياب اليومي");
+
+            const violationsList = state.attendance
+                .filter(r => r.status.includes('تأخير') || r.status.includes('مبكر'))
+                .map(r => ({
+                    "السجل المدني": r.id,
+                    "اسم المنسوبة": r.name,
+                    "الفئة": r.type === 'contract' ? 'بند عقود' : 'رسمي',
+                    "نوع الحركة": r.action,
+                    "وقت الرصد": r.time,
+                    "طبيعة المخالفة": r.status,
+                    "المبرر والسبب الإداري": r.reason
+                }));
+            const wsViolations = XLSX.utils.json_to_sheet(violationsList.length ? violationsList : [{ "ملاحظة": "لا توجد حالات تأخير اليوم" }]);
+            XLSX.utils.book_append_sheet(wb, wsViolations, "تقرير التأخير والخروج المبكر");
+
+            XLSX.writeFile(wb, `تقرير_حضور_المنسوبات_الشامل_المتعدد_${todayStr}.xlsx`);
+            showToast("📊 تم بناء وتنزيل تقرير Excel متعدد الصفحات بنجاح!", "success");
+        }
+
+        // طباعة وإصدار تقرير الـ PDF الإداري الرسمي ذي التنسيق الأنيق
+        function exportToPDF() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const presentCount = document.getElementById('stat-present').innerText;
+            const absentCount = document.getElementById('stat-absent').innerText;
+            const lateCount = document.getElementById('stat-late').innerText;
+
+            const todayAttendance = state.attendance.filter(r => r.date === todayStr);
+            const presentIds = new Set(todayAttendance.filter(r => r.action === 'حضور').map(r => r.id));
+            let absentRowsHTML = '';
+            let absentIndex = 1;
+
+            for (const id in state.staff) {
+                const member = state.staff[id];
+                if (member.type === 'contract' || (member.type === 'permanent' && state.emergencyMode)) {
+                    if (!presentIds.has(member.id)) {
+                        absentRowsHTML += `
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${absentIndex++}</td>
+                                <td style="padding: 8px; border: 1px solid #cbd5e1;">${member.name}</td>
+                                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${member.id}</td>
+                                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${member.type === 'contract' ? 'بند عقود' : 'رسمي (طوارئ)'}</td>
+                                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; color: #ef4444; font-weight: bold;">غائبة (لم ترصد دوام)</td>
+                            </tr>
+                        `;
+                    }
+                }
+            }
+
+            if (!absentRowsHTML) {
+                absentRowsHTML = '<tr><td colspan="5" style="text-align: center; padding: 12px; color: #64748b; border: 1px solid #cbd5e1;">لا توجد حالات غياب مسجلة لليوم.</td></tr>';
+            }
+
+            const violationsHTML = state.attendance
+                .filter(r => r.status.includes('تأخير') || r.status.includes('مبكر'))
+                .map((r, idx) => `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${idx + 1}</td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1;">${r.name}</td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${r.action}</td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #d97706;">${r.status}</td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${r.time}</td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1;">${r.reason !== '-' ? r.reason : 'لم يقدم مبرر بعد'}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="6" style="text-align: center; padding: 12px; color: #64748b; border: 1px solid #cbd5e1;">سجلات خالية من التأخيرات اليوم.</td></tr>';
+
+            const allMovementsHTML = state.attendance.map((r, idx) => `
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${idx + 1}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold;">${r.name}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${r.action}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace;">${r.time}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${r.method}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${r.status}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 10px; color: #64748b;">${r.reason}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="7" style="text-align: center; padding: 12px; color: #64748b; border: 1px solid #cbd5e1;">لم تسجل أي حركة دوام اليوم.</td></tr>';
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>التقرير الإداري اليومي الشامل لحضور وانصراف منسوبات المدرسة</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+                    <style>
+                        body {
+                            font-family: 'Cairo', sans-serif;
+                            direction: rtl;
+                            padding: 30px;
+                            color: #1e293b;
+                            line-height: 1.5;
+                            background: #ffffff;
+                        }
+                        .header-container {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            border-bottom: 3px double #1e293b;
+                            padding-bottom: 15px;
+                            margin-bottom: 25px;
+                        }
+                        .school-info {
+                            font-size: 11px;
+                            line-height: 1.6;
+                        }
+                        .report-title-box {
+                            text-align: center;
+                        }
+                        .report-title-box h1 {
+                            font-size: 18px;
+                            margin: 0;
+                            font-weight: 800;
+                            color: #0f172a;
+                        }
+                        .report-title-box p {
+                            font-size: 11px;
+                            color: #64748b;
+                            margin: 4px 0 0 0;
+                        }
+                        .stats-grid {
+                            display: grid;
+                            grid-template-columns: repeat(4, 1fr);
+                            gap: 12px;
+                            margin-bottom: 25px;
+                        }
+                        .stat-card {
+                            border: 1px solid #e2e8f0;
+                            border-radius: 8px;
+                            padding: 12px;
+                            text-align: center;
+                            background: #f8fafc;
+                        }
+                        .stat-card-title {
+                            font-size: 10px;
+                            color: #64748b;
+                            font-weight: bold;
+                            margin-bottom: 4px;
+                        }
+                        .stat-card-value {
+                            font-size: 20px;
+                            font-weight: 800;
+                            color: #1e293b;
+                        }
+                        .section-title {
+                            font-size: 13px;
+                            font-weight: bold;
+                            color: #1e293b;
+                            border-right: 4px solid #4f46e5;
+                            padding-right: 8px;
+                            margin-top: 25px;
+                            margin-bottom: 10px;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 20px;
+                        }
+                        th {
+                            background-color: #f1f5f9;
+                            color: #334155;
+                            font-weight: bold;
+                            font-size: 11px;
+                            padding: 8px;
+                            border: 1px solid #cbd5e1;
+                        }
+                        td {
+                            font-size: 11px;
+                            padding: 8px;
+                            border: 1px solid #cbd5e1;
+                        }
+                        .signatures-container {
+                            margin-top: 50px;
+                            display: flex;
+                            justify-content: space-between;
+                        }
+                        .signature-box {
+                            width: 40%;
+                            text-align: center;
+                            font-size: 12px;
+                            font-weight: bold;
+                        }
+                        .signature-line {
+                            height: 40px;
+                            margin-top: 10px;
+                            border-bottom: 1px dashed #cbd5e1;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header-container">
+                        <div class="school-info">
+                            <strong>المملكة العربية السعودية</strong><br>
+                            وزارة التعليم<br>
+                            إدارة التعليم بمحافظة القريات<br>
+                            الابتدائية الثامنة و العشرون بالقريات
+                        </div>
+                        <div class="report-title-box">
+                            <h1>التقرير الإداري الموحد اليومي</h1>
+                            <p>مسير حضور وانصراف المنسوبات البديل</p>
+                        </div>
+                        <div class="school-info" style="text-align: left;">
+                            تاريخ رصد التقرير: <strong>${todayStr}</strong><br>
+                            حالة طوارئ النظام: <strong>${state.emergencyMode ? 'نشطة' : 'معطلة'}</strong><br>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-title">إجمالي الحضور لليوم</div>
+                            <div class="stat-card-value" style="color: #10b981;">${presentCount}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-title">حالات الغياب المكتشف</div>
+                            <div class="stat-card-value" style="color: #ef4444;">${absentCount}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-title">التأخير المكتشف</div>
+                            <div class="stat-card-value" style="color: #d97706;">${lateCount}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-title">الفئة المشمولة</div>
+                            <div class="stat-card-value" style="font-size: 12px; padding-top:6px;">${state.emergencyMode ? 'الجميع' : 'العقود'}</div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">أولاً: بيان وحالات الغياب المكتشف (اليوم)</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 8%;">م</th>
+                                <th>الاسم بالكامل</th>
+                                <th>رقم السجل المدني</th>
+                                <th>الفئة الإدارية</th>
+                                <th>حالة الدوام</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${absentRowsHTML}
+                        </tbody>
+                    </table>
+
+                    <div class="section-title">ثانياً: رصد تفاصيل حالات التأخير والانصراف المبكر</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 8%;">م</th>
+                                <th>اسم الموظفة</th>
+                                <th>الحركة</th>
+                                <th>تفاصيل المخالفة</th>
+                                <th>وقت الحركة</th>
+                                <th>المبرر والسبب الإداري</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${violationsHTML}
+                        </tbody>
+                    </table>
+
+                    <div class="section-title">ثالثاً: سجل ومسير حركات الدوام اللحظية</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 6%;">م</th>
+                                <th>اسم المنسوبة</th>
+                                <th>الحركة</th>
+                                <th>وقت الرصد</th>
+                                <th>طريقة التحقق</th>
+                                <th>حالة الدوام</th>
+                                <th>الملاحظات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${allMovementsHTML}
+                        </tbody>
+                    </table>
+
+                    <div class="signatures-container">
+                        <div class="signature-box">
+                            <span>وكيلة المدرسة الموقرة</span>
+                            <div class="signature-line"></div>
+                            <span style="font-size: 10px; color: #64748b; font-weight: normal;">الأستاذة فوزية الغامدي</span>
+                        </div>
+                        <div class="signature-box">
+                            <span>مديرة المدرسة الفاضلة</span>
+                            <div class="signature-line"></div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            
+            printWindow.onload = function() {
+                printWindow.print();
+                showToast("📄 تم تجهيز التقرير الإداري واستدعاء واجهة طباعة الـ PDF بنجاح!", "success");
+            };
+        }
+
+        // دالة تغيير نوع الفلترة والبحث المتقدم في التقارير
+        function onReportTypeChange() {
+            const type = document.getElementById('report-type-select').value;
+            const container = document.getElementById('report-staff-filter-container');
+            if (type === 'single-all-days') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        // تفريغ وتصفية حقول منشئ التقارير
+        function clearReportFilters() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('report-type-select').value = 'all-range';
+            document.getElementById('report-date-start').value = todayStr;
+            document.getElementById('report-date-end').value = todayStr;
+            document.getElementById('report-staff-filter-container').classList.add('hidden');
+            
+            document.getElementById('report-view-table-body').innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center p-8 text-slate-400 font-medium">
+                        <i class="fa-solid fa-folder-open text-2xl mb-2 block"></i>
+                        يرجى اختيار فلاتر التقرير والنقر على \"توليد ومعاينة التقرير\" لعرض البيانات المخصصة هنا.
+                    </td>
+                </tr>
+            `;
+            showToast("🧹 تم تصفير كافة حقول وفلاتر التقارير المتقدمة بنجاح.", "info");
+        }
+
+        // مصفوفة لتخزين نتائج التصفية الحالية لاستخدامها في التصدير
+        let lastGeneratedReportData = [];
+
+        // توليد وبناء التقرير المخصص ديناميكياً
+        function generateCustomReport() {
+            const reportType = document.getElementById('report-type-select').value;
+            const startStr = document.getElementById('report-date-start').value;
+            const endStr = document.getElementById('report-date-end').value;
+            const targetStaffId = document.getElementById('report-staff-select').value;
+
+            if (!startStr || !endStr) {
+                showToast("⚠️ يرجى تحديد تاريخ البداية والنهاية أولاً لتوليد التقرير!", "warning");
+                return;
+            }
+
+            const startDate = new Date(startStr);
+            const endDate = new Date(endStr);
+            startDate.setHours(0,0,0,0);
+            endDate.setHours(23,59,59,999);
+
+            let filtered = [];
+
+            if (reportType === 'all-range') {
+                // تصفية كافة المعلمات في المدى الزمني المحدد
+                filtered = state.attendance.filter(record => {
+                    const recDate = new Date(record.date);
+                    recDate.setHours(12,0,0,0); // ضبط متوسط اليوم لتلافي تباين التوقيت الدولي
+                    return recDate >= startDate && recDate <= endDate;
+                });
+            } else if (reportType === 'single-all-days') {
+                // تصفية حركات موظفة واحدة بعينها عبر الأيام في المدى الزمني المحدد
+                filtered = state.attendance.filter(record => {
+                    const recDate = new Date(record.date);
+                    recDate.setHours(12,0,0,0);
+                    return record.id === targetStaffId && recDate >= startDate && recDate <= endDate;
+                });
+            }
+
+            // ترتيب حركات التقرير تصاعدياً بالتاريخ والوقت لتسهيل قراءته كمسلسل
+            filtered.sort((a, b) => {
+                const dateA = new Date(a.date + ' ' + (a.time.includes('م') ? convertTo24Hour(a.time) : a.time));
+                const dateB = new Date(b.date + ' ' + (b.time.includes('م') ? convertTo24Hour(b.time) : b.time));
+                return dateA - dateB;
+            });
+
+            lastGeneratedReportData = filtered;
+
+            const tableBody = document.getElementById('report-view-table-body');
+            tableBody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center p-8 text-slate-400 font-medium">
+                            <i class="fa-solid fa-magnifying-glass text-2xl mb-2 block"></i>
+                            لا توجد أي حركات حضور أو انصراف مسجلة ضمن هذه الفلاتر والتواريخ المحددة.
+                        </td>
+                    </tr>
+                `;
+                showToast("ℹ️ تم البحث ولم نجد سجلات مطابقة للفلاتر.", "info");
+                return;
+            }
+
+            filtered.forEach(record => {
+                const actionClass = record.action === 'حضور' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700';
+                const statusClass = record.status.includes('تأخير') || record.status.includes('مبكر') ? 'text-amber-600 font-bold' : 'text-slate-500 font-medium';
+                
+                tableBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-3 font-bold text-slate-800">${record.name} <span class="text-[9px] text-slate-400 block font-normal">سجل: ${record.id}</span></td>
+                        <td class="p-3 text-center text-slate-500 font-semibold">${record.type === 'contract' ? 'بند عقود' : 'رسمي'}</td>
+                        <td class="p-3 font-medium text-slate-600">${record.date}</td>
+                        <td class="p-3 font-semibold text-slate-800 font-mono">${record.time}</td>
+                        <td class="p-3 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${actionClass}">${record.action}</span>
+                        </td>
+                        <td class="p-3 text-center ${statusClass}">${record.status}</td>
+                        <td class="p-3 text-slate-500 font-medium max-w-[140px] truncate" title="${record.reason}">${record.reason}</td>
+                    </tr>
+                `;
+            });
+
+            showToast(`🎉 تم توليد ومعاينة التقرير الاستقصائي بنجاح! السجلات المطابقة: (${filtered.length}) حركة.`, "success");
+        }
+
+        // دالة مساعدة لتحويل الوقت من 12 ساعة لـ 24 ساعة للترتيب
+        function convertTo24Hour(timeStr) {
+            let [time, modifier] = timeStr.split(' ');
+            let [hours, minutes] = time.split(':');
+            if (hours === '12') {
+                hours = '00';
+            }
+            if (modifier === 'م') {
+                hours = parseInt(hours, 10) + 12;
+            }
+            return `${hours}:${minutes}`;
+        }
+
+        // تصدير التقرير الفلتر الحالي كملف إكسل مخصص ومتقدم
+        function exportReportToExcel() {
+            if (lastGeneratedReportData.length === 0) {
+                showToast("⚠️ يرجى النقر على زر 'توليد ومعاينة التقرير' أولاً وبناء التقرير لتتمكني من تصديره!", "warning");
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            const reportType = document.getElementById('report-type-select').value;
+            const startStr = document.getElementById('report-date-start').value;
+            const endStr = document.getElementById('report-date-end').value;
+
+            const metaData = [
+                { "اسم التقرير": "تقرير حضور وانصراف مخصص مصفى", "التفاصيل": `من تاريخ: ${startStr} إلى تاريخ: ${endStr}` },
+                { "اسم التقرير": "الفئة المستهدفة بالتقرير", "التفاصيل": reportType === 'all-range' ? 'كافة منسوبات المدرسة' : 'موظفة واحدة بعينها' },
+                { "اسم التقرير": "عدد الحركات الموثقة المصدرة", "التفاصيل": lastGeneratedReportData.length }
+            ];
+            const wsMeta = XLSX.utils.json_to_sheet(metaData);
+            XLSX.utils.book_append_sheet(wb, wsMeta, "معلومات التقرير");
+
+            const formattedMovements = lastGeneratedReportData.map(r => ({
+                "رقم السجل المدني": r.id,
+                "اسم المنسوبة بالكامل": r.name,
+                "نوع الدوام": r.type === 'contract' ? 'بند عقود' : 'رسمي (طوارئ)',
+                "تاريخ الحركة": r.date,
+                "وقت الرصد": r.time,
+                "طبيعة الحركة": r.action,
+                "طريقة التحقق": r.method,
+                "حالة الحركة والزمن": r.status,
+                "المبررات والأسباب": r.reason
+            }));
+            const wsMovements = XLSX.utils.json_to_sheet(formattedMovements);
+            XLSX.utils.book_append_sheet(wb, wsMovements, "تفاصيل الحركات");
+
+            XLSX.writeFile(wb, `التقرير_الاستقصائي_المخصص_المدرسي_${startStr}_إلى_${endStr}.xlsx`);
+            showToast("📊 تم تصدير وبناء تقرير Excel المصفى بنجاح!", "success");
+        }
+
+        // تصدير التقرير الفلتر الحالي كملف PDF رسمي مخصص للطباعة
+        function exportReportToPDF() {
+            if (lastGeneratedReportData.length === 0) {
+                showToast("⚠️ يرجى النقر على زر 'توليد ومعاينة التقرير' أولاً ليتوفر تقرير مصفى للطباعة!", "warning");
+                return;
+            }
+
+            const startStr = document.getElementById('report-date-start').value;
+            const endStr = document.getElementById('report-date-end').value;
+            const reportType = document.getElementById('report-type-select').value;
+
+            const rowsHTML = lastGeneratedReportData.map((r, idx) => `
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${idx + 1}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; font-weight: bold;">${r.name}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${r.id}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${r.date}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-family: monospace;">${r.time}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${r.action}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${r.status}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; font-size: 10px; color: #64748b;">${r.reason}</td>
+                </tr>
+            `).join('');
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>التقرير الاستقصائي المخصص لحضور وانصراف منسوبات المدرسة</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+                    <style>
+                        body {
+                            font-family: 'Cairo', sans-serif;
+                            direction: rtl;
+                            padding: 30px;
+                            color: #1e293b;
+                            line-height: 1.5;
+                        }
+                        .header-container {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            border-bottom: 3px double #1e293b;
+                            padding-bottom: 15px;
+                            margin-bottom: 25px;
+                        }
+                        .school-info {
+                            font-size: 11px;
+                            line-height: 1.6;
+                        }
+                        .report-title-box {
+                            text-align: center;
+                        }
+                        .report-title-box h1 {
+                            font-size: 16px;
+                            margin: 0;
+                            font-weight: 800;
+                            color: #0f172a;
+                        }
+                        .report-title-box p {
+                            font-size: 11px;
+                            color: #64748b;
+                            margin: 4px 0 0 0;
+                        }
+                        .section-title {
+                            font-size: 13px;
+                            font-weight: bold;
+                            color: #1e293b;
+                            border-right: 4px solid #4f46e5;
+                            padding-right: 8px;
+                            margin-top: 15px;
+                            margin-bottom: 15px;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 20px;
+                        }
+                        th {
+                            background-color: #f1f5f9;
+                            color: #334155;
+                            font-weight: bold;
+                            font-size: 11px;
+                            padding: 8px;
+                            border: 1px solid #cbd5e1;
+                        }
+                        td {
+                            font-size: 11px;
+                            padding: 8px;
+                            border: 1px solid #cbd5e1;
+                        }
+                        .signatures-container {
+                            margin-top: 50px;
+                            display: flex;
+                            justify-content: space-between;
+                        }
+                        .signature-box {
+                            width: 40%;
+                            text-align: center;
+                            font-size: 12px;
+                            font-weight: bold;
+                        }
+                        .signature-line {
+                            height: 40px;
+                            margin-top: 10px;
+                            border-bottom: 1px dashed #cbd5e1;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header-container">
+                        <div class="school-info">
+                            <strong>المملكة العربية السعودية</strong><br>
+                            وزارة التعليم<br>
+                            إدارة التعليم بمحافظة القريات<br>
+                            الابتدائية الثامنة و العشرون بالقريات
+                        </div>
+                        <div class="report-title-box">
+                            <h1>التقرير الاستقصائي المخصص لحضور المنسوبات</h1>
+                            <p>المستخلص المصفى من سحابة جداول جوجل</p>
+                        </div>
+                        <div class="school-info" style="text-align: left;">
+                            فترة البحث: <strong>من ${startStr} إلى ${endStr}</strong><br>
+                            fئة البحث: <strong>${reportType === 'all-range' ? 'كافة المعلمات' : 'بحث فردي تفصيلي'}</strong><br>
+                        </div>
+                    </div>
+
+                    <div class="section-title">بيان وحركات الحضور والانصراف المصفاة والموثقة</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">م</th>
+                                <th>اسم المنسوبة بالكامل</th>
+                                <th>السجل المدني</th>
+                                <th>التاريخ</th>
+                                <th>وقت الرصد</th>
+                                <th>نوع الحركة</th>
+                                <th>الحالة والزمن</th>
+                                <th>الملاحظات والمبررات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHTML}
+                        </tbody>
+                    </table>
+
+                    <div class="signatures-container">
+                        <div class="signature-box">
+                            <span>وكيلة المدرسة الموقرة</span>
+                            <div class="signature-line"></div>
+                            <span style="font-size: 10px; color: #64748b; font-weight: normal;">الأستاذة فوزية الغامدي</span>
+                        </div>
+                        <div class="signature-box">
+                            <span>مديرة المدرسة الفاضلة</span>
+                            <div class="signature-line"></div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            
+            printWindow.onload = function() {
+                printWindow.print();
+                showToast("📄 تم تحويل وتصدير تقرير الـ PDF المصفى المتقدم بنجاح!", "success");
+            };
+        }
+
+        // أداة المساعد لبناء توست عائم
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            
+            const toast = document.createElement('div');
+            toast.className = "p-4 rounded-xl shadow-lg border text-xs font-bold flex items-center gap-3 transition-all duration-300 transform translate-y-5 opacity-0 pointer-events-auto z-[99999]";
+            
+            let icon = '<i class="fa-solid fa-circle-check text-base"></i>';
+            if (type === 'success') {
+                toast.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-100');
+                icon = '<i class="fa-solid fa-circle-check text-base text-emerald-500"></i>';
+            } else if (type === 'warning') {
+                toast.classList.add('bg-amber-50', 'text-amber-800', 'border-amber-100');
+                icon = '<i class="fa-solid fa-circle-exclamation text-base text-amber-500"></i>';
+            } else if (type === 'info') {
+                toast.classList.add('bg-blue-50', 'text-blue-800', 'border-blue-100');
+                icon = '<i class="fa-solid fa-circle-info text-base text-blue-500"></i>';
+            }
+
+            toast.innerHTML = `${icon} <span class="flex-grow">${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-5', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-5', 'opacity-0');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
