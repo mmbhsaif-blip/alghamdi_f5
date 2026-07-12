@@ -1022,6 +1022,40 @@ function doGet(e) {
             localStorage.setItem('school_attendance_system_state', JSON.stringify(state));
         }
 
+        // دالة لتنظيف وتنسيق التاريخ السحابي القادم من جداول جوجل لمنع تأثير فروق التوقيت
+        function sanitizeLoadedDate(dateVal) {
+            if (!dateVal) return "";
+            const str = String(dateVal).trim();
+            if (str.includes('T')) {
+                const dateObj = new Date(str);
+                if (!isNaN(dateObj.getTime())) {
+                    const y = dateObj.getFullYear();
+                    const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                    const d = dateObj.getDate().toString().padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                }
+            }
+            return str;
+        }
+
+        // دالة لتنظيف وتنسيق الوقت السحابي القادم من جداول جوجل لمنع صيغ ISO وتاريخ 1899 الافتراضي
+        function sanitizeLoadedTime(timeVal) {
+            if (!timeVal) return "";
+            const str = String(timeVal).trim();
+            if (str.includes('T')) {
+                const dateObj = new Date(str);
+                if (!isNaN(dateObj.getTime())) {
+                    let hours = dateObj.getHours();
+                    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+                    const ampm = hours >= 12 ? 'م' : 'ص';
+                    hours = hours % 12;
+                    hours = hours ? hours : 12;
+                    return `${hours}:${minutes} ${ampm}`;
+                }
+            }
+            return str;
+        }
+
         // دالة تحويل وتوحيد الأرقام المكتوبة باللغة العربية إلى أرقام نظامية دولية
         function convertArabicNumerals(str) {
             if (!str) return '';
@@ -1115,7 +1149,16 @@ function doGet(e) {
                 .then(data => {
                     if (data && data.success) {
                         state.staff = data.staff || {};
-                        state.attendance = data.attendance || [];
+                        
+                        // تنظيف وتنسيق الحركات القادمة من السحابة تلقائياً لمنع ظهور صيغ ISO المعقدة
+                        state.attendance = (data.attendance || []).map(record => {
+                            return {
+                                ...record,
+                                date: sanitizeLoadedDate(record.date),
+                                time: sanitizeLoadedTime(record.time)
+                            };
+                        });
+                        
                         if (data.config) {
                             state.timings.checkInStart = data.config.checkInStart || state.timings.checkInStart;
                             state.timings.checkInLate = data.config.checkInLate || state.timings.checkInLate;
@@ -1123,7 +1166,6 @@ function doGet(e) {
                         }
                         saveState();
                         renderAdminDashboard();
-                        updateTeacherPortalLocationUI();
                         updateGoogleSheetSyncUI(true);
                         showToast("🟢 تم مزامنة البيانات وتحديث الحركات والمنسوبات من جداول جوجل بنجاح!", "success");
                     } else if (data && data.success === false) {
@@ -2001,143 +2043,143 @@ function doGet(e) {
                 showToast(`🎉 تم مزامنة عدد (${state.offlineQueue.length}) حركات مسجلة أوفلاين بنجاح مع جداول جوجل.`, "success");
                 state.offlineQueue = [];
                 updateOfflineIndicator();
-                renderAdminDashboard();
-            }, 1500);
-        }
-
-        // تحديث منبه وجود حركات بانتظار المزامنة في لوحة تحكم الوكيل
-        function updateOfflineIndicator() {
-            const indicator = document.getElementById('offline-sync-indicator');
-            const count = document.getElementById('sync-queue-count');
-
-            if (state.offlineQueue.length > 0) {
-                count.innerText = state.offlineQueue.length;
-                indicator.classList.remove('hidden');
-            } else {
-                indicator.classList.add('hidden');
-            }
-        }
-
-        // تحديث وإعادة رسم لوحة المتابعة الإدارية لوكيل المدرسة بالكامل
-        function renderAdminDashboard() {
-            document.getElementById('total-staff-count').innerText = Object.keys(state.staff).length;
-
-            const todayStr = new Date().toISOString().split('T')[0];
-            const todayAttendance = state.attendance.filter(r => r.date === todayStr);
-            
-            const presentIds = new Set(todayAttendance.filter(r => r.action === 'حضور').map(r => r.id));
-            document.getElementById('stat-present').innerText = presentIds.size;
-
-            let totalActiveStaff = 0;
-            let absentCount = 0;
-            for (const key in state.staff) {
-                const member = state.staff[key];
-                if (member.type === 'contract' || (member.type === 'permanent' && state.emergencyMode)) {
-                    totalActiveStaff++;
-                    if (!presentIds.has(member.id)) {
-                        absentCount++;
-                    }
-                }
-            }
-            document.getElementById('stat-absent').innerText = absentCount;
-
-            let lateCount = 0;
-            todayAttendance.forEach(record => {
-                if (record.action === 'حضور' && record.status.includes('تأخير')) {
-                    lateCount++;
-                }
-            });
-            document.getElementById('stat-late').innerText = lateCount;
-
-            const emergencyLabel = document.getElementById('stat-emergency-label');
-            const emergencyIcon = document.getElementById('stat-emergency-icon');
-            const toggleSwitch = document.getElementById('toggle-emergency-switch');
-            const switchThumb = document.getElementById('emergency-switch-thumb');
-
-            if (state.emergencyMode) {
-                emergencyLabel.innerText = "نشط ومفعل طوارئ";
-                emergencyLabel.className = "text-base font-extrabold text-rose-600";
-                emergencyIcon.className = "w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center text-xl animate-pulse";
-                toggleSwitch.className = "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-rose-600";
-                switchThumb.className = "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-5";
-            } else {
-                emergencyLabel.innerText = "معطّل (الوضع العادي)";
-                emergencyLabel.className = "text-base font-extrabold text-slate-800";
-                emergencyIcon.className = "w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center text-xl";
-                toggleSwitch.className = "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-slate-600";
-                switchThumb.className = "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0";
-            }
-
-            // تحديث خيار الموظفات المستهدفة في منشئ التقارير المخصصة
-            const reportStaffSelect = document.getElementById('report-staff-select');
-            const currentSelectedValue = reportStaffSelect.value;
-            reportStaffSelect.innerHTML = '';
-            
-            for (const key in state.staff) {
-                const member = state.staff[key];
-                const opt = document.createElement('option');
-                opt.value = member.id;
-                opt.text = `${member.name} (سجل: ${member.id})`;
-                reportStaffSelect.appendChild(opt);
-            }
-            if (currentSelectedValue && state.staff[currentSelectedValue]) {
-                reportStaffSelect.value = currentSelectedValue;
-            }
-
-            // تحديث قائمة الموظفات والأجهزة وبصمة الجوال بالعمود الأيمن
-            const staffListContainer = document.getElementById('staff-admin-list');
-            staffListContainer.innerHTML = '';
-
-            const searchQuery = (document.getElementById('search-staff-input')?.value || '').trim().toLowerCase();
-
-            for (const key in state.staff) {
-                const member = state.staff[key];
-
-                if (searchQuery) {
-                    const matchesName = member.name.toLowerCase().includes(searchQuery);
-                    const matchesId = member.id.toLowerCase().includes(searchQuery);
-                    if (!matchesName && !matchesId) {
-                        continue;
-                    }
-                }
-                
-                const typeLabel = member.type === 'contract' ? 'بند عقود' : 'رسمي (طوارئ)';
-                const badgeClass = member.type === 'contract' ? 'bg-indigo-50 text-indigo-700' : 'bg-amber-50 text-amber-700';
-                
-                const hasDeviceBound = member.token !== null;
-                const deviceStatusText = hasDeviceBound ? '✅ مرتبط بمفتاح آمن' : '❌ غير مرتبط بهاتف';
-                const deviceStatusClass = hasDeviceBound ? 'text-emerald-600 font-bold' : 'text-slate-400 font-medium';
-
-                staffListContainer.innerHTML += `
-                    <div class="p-3.5 border border-slate-100 rounded-xl bg-slate-50 hover:bg-slate-100/50 transition-colors space-y-3">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="font-bold text-slate-800 text-sm block">${member.name}</span>
-                                <span class="text-[10px] text-slate-400">سجل: ${member.id}</span>
-                            </div>
-                            <div class="flex flex-col items-end gap-1">
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeClass}">${typeLabel}</span>
-                                <button onclick="deleteStaffMember('${member.id}')" class="text-[10px] text-rose-500 hover:text-rose-700 font-bold transition-all">حذف 🗑️</button>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center justify-between text-xs border-t border-slate-100/70 pt-2">
-                            <span class="${deviceStatusClass} text-[11px]">${deviceStatusText}</span>
-                            ${hasDeviceBound ? `
-                                <button onclick="triggerResetDevice('${member.id}', '${member.name}')" class="text-[10px] bg-red-50 text-red-700 font-bold px-2.5 py-1 rounded-lg hover:bg-red-100 transition-colors">
-                                    فك هاتفها 🔓
+                        <!-- كود المزامنة للنسخ واللصق -->
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-slate-700">📋 الكود البرمجي لنسخه ولصقه في Apps Script (المطور والمحصن ذاتياً للرابط المستقل والمربوط):</span>
+                                <button onclick="copyAppsScriptCode()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-3 py-1.5 rounded-lg text-[10px] flex items-center gap-1 transition-all">
+                                    <i class="fa-solid fa-copy"></i> نسخ الكود 📋
                                 </button>
-                            ` : ''}
-                        </div>
+                            </div>
+                            <pre class="bg-slate-900 text-slate-200 p-3 rounded-xl font-mono text-[10px] text-left overflow-x-auto max-h-[160px] custom-scrollbar" id="apps-script-code-block" dir="ltr" style="unicode-bidi: bidi-override; text-align: left; direction: ltr;">
+/* كود محرك المزامنة السحابي المطور والذكي لجداول بيانات جوجل */
+// ⚠️ تم تضمين رابط جدول البيانات الجديد الخاص بمدرستكم تلقائياً أدناه للربط المستقر والمباشر:
+var SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1GBtbYZ4xDaeqvT2H7jFtkn6LfWPKMVmAiF1P5WUBIZE/edit?gid=0#gid=0"; 
 
-                        <!-- أزرار التحضير الاستثنائي -->
-                        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100/70">
-                            <button onclick="openManualCheckInModal('${member.id}', '${member.name}', 'حضور')" class="text-[11px] font-semibold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 py-1 px-2 rounded-lg text-center transition-colors">
-                                <i class="fa-solid fa-square-check text-emerald-600"></i> تحضير إداري
-                            </button>
-                            <button onclick="openManualCheckInModal('${member.id}', '${member.name}', 'انصراف')" class="text-[11px] font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 py-1 px-2 rounded-lg text-center transition-colors">
-                                <i class="fa-solid fa-moon text-slate-500"></i> انصراف إداري
-                            </button>
+function getSpreadsheet() {
+  if (SPREADSHEET_URL && SPREADSHEET_URL.trim() !== "") {
+    try {
+      return SpreadsheetApp.openByUrl(SPREADSHEET_URL.trim());
+    } catch(e) {
+      return SpreadsheetApp.getActive();
+    }
+  }
+  return SpreadsheetApp.getActive();
+}
+
+function doGet(e) {
+  try {
+    var op = e.parameter.action;
+    var ss = getSpreadsheet();
+    if (!ss) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: "لم نجد جدول البيانات النشط. يرجى مراجعة رابط ملف الإكسل." }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var staffSheet = ss.getSheetByName("Staff") || ss.insertSheet("Staff");
+    var configSheet = ss.getSheetByName("Config") || ss.insertSheet("Config");
+    var attSheet = ss.getSheetByName("Attendance") || ss.insertSheet("Attendance");
+    
+    if (staffSheet.getLastRow() === 0) staffSheet.appendRow(["ID", "Name", "Type", "Token"]);
+    if (configSheet.getLastRow() === 0) configSheet.appendRow(["Key", "Value"]);
+    if (attSheet.getLastRow() === 0) attSheet.appendRow(["ID", "Name", "Date", "Time", "Action", "Method", "Status", "Reason"]);
+    
+    if (op === "getData") {
+      var staffData = staffSheet.getDataRange().getValues();
+      var staff = {};
+      for (var i = 1; i < staffData.length; i++) {
+        staff[staffData[i][0]] = { id: String(staffData[i][0]), name: staffData[i][1], type: staffData[i][2], token: staffData[i][3] || null };
+      }
+      var configData = configSheet.getDataRange().getValues();
+      var config = {};
+      for (var i = 1; i < configData.length; i++) {
+        config[configData[i][0]] = configData[i][1];
+      }
+      
+      // جلب القيم المكتوبة والمنسقة نصياً بدلاً من الكائنات الأصلية لمنع صيغ ISO وتأثير فروق التوقيت
+      var attDisplayData = attSheet.getDataRange().getDisplayValues();
+      var attendance = [];
+      for (var i = attDisplayData.length - 1; i >= 1; i--) {
+        attendance.push({ 
+          id: String(attDisplayData[i][0]), 
+          name: attDisplayData[i][1], 
+          date: attDisplayData[i][2], 
+          time: attDisplayData[i][3], 
+          action: attDisplayData[i][4], 
+          method: attDisplayData[i][5], 
+          status: attDisplayData[i][6], 
+          reason: attDisplayData[i][7] 
+        });
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: true, staff: staff, config: config, attendance: attendance }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "addAttendance") {
+      var attSheet = ss.getSheetByName("Attendance") || ss.insertSheet("Attendance");
+      attSheet.appendRow([e.parameter.id, e.parameter.name, e.parameter.date, e.parameter.time, e.parameter.actionType, e.parameter.method, e.parameter.status, e.parameter.reason]);
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "addStaff") {
+      var staffSheet = ss.getSheetByName("Staff") || ss.insertSheet("Staff");
+      staffSheet.appendRow([e.parameter.id, e.parameter.name, e.parameter.type, e.parameter.token || ""]);
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "updateToken") {
+      var staffSheet = ss.getSheetByName("Staff");
+      var staffData = staffSheet.getDataRange().getValues();
+      for (var i = 1; i < staffData.length; i++) {
+        if (String(staffData[i][0]) === String(e.parameter.id)) {
+          staffSheet.getRange(i + 1, 4).setValue(e.parameter.token || "");
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "deleteStaff") {
+      var staffSheet = ss.getSheetByName("Staff");
+      var staffData = staffSheet.getDataRange().getValues();
+      for (var i = 1; i < staffData.length; i++) {
+        if (String(staffData[i][0]) === String(e.parameter.id)) {
+          staffSheet.deleteRow(i + 1);
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "deleteAttendance") {
+      var attSheet = ss.getSheetByName("Attendance");
+      var attData = attSheet.getDataRange().getValues();
+      for (var i = 1; i < attData.length; i++) {
+        if (String(attData[i][0]) === String(e.parameter.id) && String(attData[i][2]) === String(e.parameter.date) && String(attData[i][3]) === String(e.parameter.time) && String(attData[i][4]) === String(e.parameter.actionType)) {
+          attSheet.deleteRow(i + 1);
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (op === "resetSystem") {
+      var sheets = ss.getSheets();
+      for (var i = 0; i < sheets.length; i++) {
+        if (sheets[i].getName() !== "Temp") {
+          try { ss.deleteSheet(sheets[i]); } catch(err) {}
+        }
+      }
+      ss.insertSheet("Staff").appendRow(["ID", "Name", "Type", "Token"]);
+      ss.insertSheet("Attendance").appendRow(["ID", "Name", "Date", "Time", "Action", "Method", "Status", "Reason"]);
+      ss.insertSheet("Config").appendRow(["Key", "Value"]);
+      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</pre>
                         </div>
                     </div>
                 `;
