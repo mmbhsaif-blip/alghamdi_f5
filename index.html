@@ -62,6 +62,7 @@
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-800 antialiased selection:bg-brand-500 selection:text-white flex flex-col justify-between">
 
+    <!-- STREAMING_CHUNK: Styling the layout... -->
     <!-- بار التنقل العلوي المحدث والمصمم للوصول الفوري لبوابة الوكيلة -->
     <header id="public-header" class="bg-school-navy text-white shadow-md border-b border-slate-700">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -97,6 +98,7 @@
         </div>
     </header>
 
+    <!-- STREAMING_CHUNK: Rendering the simulation panel... -->
     <!-- شريط محاكاة الظروف التشغيلية - يظهر فقط للوكيلة لأغراض الاختبار -->
     <section id="simulation-bar" class="bg-amber-50 border-b border-amber-200/60 px-4 py-3 hidden">
         <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-sm">
@@ -146,6 +148,7 @@
         </div>
     </section>
 
+    <!-- STREAMING_CHUNK: Designing the teacher portal view... -->
     <!-- المحتوى الرئيسي للمشروع -->
     <main class="flex-grow flex flex-col justify-between">
 
@@ -211,7 +214,7 @@
                                         <span id="badge-gps-text" class="text-[10px] font-bold text-emerald-600">داخل المدرسة</span>
                                     </div>
                                     <div id="teacher-school-coords-text" class="text-[9px] text-slate-400 font-semibold pr-7 text-right">
-                                        قيود الإحداثيات: جاري التحميل...
+                                        ...جاري التحميل
                                     </div>
 
                                     <!-- مؤشر الهاتف المسجل والتوكن التشفيري -->
@@ -250,6 +253,7 @@
             </div>
         </div>
 
+        <!-- STREAMING_CHUNK: Building the admin panel headers... -->
         <!-- 2. واجهة الإدارة والمراقبة الشاملة (Admin Dashboard) - تظهر للوكيلة فقط بعد التحقق -->
         <div id="view-admin" class="max-w-7xl mx-auto px-4 py-8 space-y-6 w-full hidden animate-fade-in">
             
@@ -271,6 +275,7 @@
                 </button>
             </div>
 
+            <!-- STREAMING_CHUNK: Implementing timing configurations... -->
             <!-- صف إعدادات التوقيت المدرسي والـ GPS والرمز السري -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- صف إعدادات التوقيت المدرسي -->
@@ -342,6 +347,7 @@
                 </div>
             </div>
 
+            <!-- STREAMING_CHUNK: Collapsing developer configuration panels... -->
             <!-- حاوية تفاعلية منزلقة ومطوية تجمع خيارات الربط السحابي ومطوري الأجهزة لإخفائها من الواجهة اليومية للوكيلة -->
             <details class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden group">
                 <summary class="flex justify-between items-center px-6 py-4 cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors select-none font-bold text-slate-700">
@@ -405,6 +411,7 @@
                             </div>
                         </div>
 
+                        <!-- STREAMING_CHUNK: Displaying the deployment Apps Script reference block... -->
                         <!-- كود المزامنة للنسخ واللصق -->
                         <div class="space-y-2 pt-2 border-t border-slate-100">
                             <div class="flex justify-between items-center">
@@ -592,6 +599,7 @@ function doGet(e) {
                 </div>
             </details>
 
+            <!-- STREAMING_CHUNK: Displaying stats cards... -->
             <!-- لوحة الإحصائيات الفورية والذكية ومراقبة الدوام -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- بطاقة الحضور الكلي -->
@@ -643,6 +651,7 @@ function doGet(e) {
                 </div>
             </div>
 
+            <!-- STREAMING_CHUNK: Integrating custom report builder... -->
             <!-- لوحة التقارير الاستقصائية والتحليلات المتقدمة -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
@@ -730,6 +739,7 @@ function doGet(e) {
                 </div>
             </div>
 
+            <!-- STREAMING_CHUNK: Structuring manual staff entry... -->
             <!-- لوحة التحكم الإدارية المتقدمة والإشراف الفوري -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
@@ -829,6 +839,7 @@ function doGet(e) {
                     </div>
                 </div>
 
+                <!-- STREAMING_CHUNK: Generating the attendance list table... -->
                 <!-- Column Left: Active Attendance Feed -->
                 <div class="lg:col-span-8 space-y-6">
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -879,11 +890,12 @@ function doGet(e) {
             </div>
         </div>
 
+        <!-- STREAMING_CHUNK: Generating global footer... -->
         <!-- الفوتر العام البسيط -->
         <footer id="public-footer" class="bg-slate-200 border-t border-slate-300 py-6 mt-auto">
             <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-slate-800 font-extrabold">
                 <p class="text-center sm:text-right tracking-wide text-slate-900">
-                    © 2026 الابتدائية الثامنة والعشرون بالقريات. وكيلة المدرسة الأستاذة فوزية الغامدي. جميع الحقوق محفوظة.
+                    © 2026 الابتدائية الثامنة والعشرون بالقريات. وكيلة المدرسة الأستاذة فوزية عبدالله الغامدي. جميع الحقوق محفوظة.
                 </p>
                 <div class="flex items-center gap-2">
                     <button onclick="openAdminLoginModal()" class="text-indigo-900 hover:text-white hover:bg-indigo-700 font-extrabold transition-all flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-indigo-300 shadow-md">
@@ -895,6 +907,7 @@ function doGet(e) {
         </footer>
     </main>
 
+    <!-- STREAMING_CHUNK: Integrating administrative modals... -->
     <!-- نافذة تسجيل دخول الوكيلة -->
     <div id="admin-login-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-slate-100 text-right animate-fade-in">
@@ -987,15 +1000,18 @@ function doGet(e) {
     <!-- حاوية الإشعارات العائمة التلقائية (Floating Toasts) -->
     <div id="toast-container" class="fixed bottom-5 left-5 z-50 space-y-2 pointer-events-none max-w-md w-full px-4"></div>
 
+    <!-- STREAMING_CHUNK: Initializing JavaScript state and constants... -->
     <!-- كود الجافاسكريبت والمحرك البرمجي لمحاكاة النظام بالكامل -->
     <script>
+        // إعداد قيود الإحداثيات والتواريخ
         let SCHOOL_LAT = 24.7136;
         let SCHOOL_LNG = 46.6753;
         let SCHOOL_RADIUS = 100;
 
-        // الرابط السحابي الصحيح لمدرستكم لضمان المزامنة التلقائية والضوء الأخضر لجميع الجوالات
+        // رابط سحابة مدرستكم الفعال والنهائي المعتمد
         const HARDCODED_SHEET_URL = "https://script.google.com/macros/s/AKfycbz5wBcArZbI37WK9d9xgqSX9r5dyHGm3OzPUath5WzkvPUbCmA0Fzkv2Q3ek_9kJKY/exec";
 
+        // الحالة الافتراضية الصالحة للهيكلة والإنشاء المباشر
         const defaultState = {
             activeRole: 'teacher',
             emergencyMode: false,
@@ -1024,7 +1040,7 @@ function doGet(e) {
             customSimulatedTime: null
         };
 
-        // دالة دمج عميق لضمان تعبئة الحقول المفقودة لمنع تجميد المتصفحات عند الترقية
+        // دالة الدمج العميق لضمان شحن وتعبئة كامل البيانات المفقودة بالذاكرة
         function mergeWithDefault(loaded, defaults) {
             if (!loaded) return JSON.parse(JSON.stringify(defaults));
             let merged = JSON.parse(JSON.stringify(defaults));
@@ -1040,7 +1056,8 @@ function doGet(e) {
             return merged;
         }
 
-        // قراءة وتوثيق وتأمين الحالة المحلية من الذاكرة لضمان عدم تجميد المتصفحات
+        // STREAMING_CHUNK: Validating local storage parameters... -->
+        // قراءة وتوثيق وتطهير الحالة المحلية من الذاكرة لضمان عدم التجمد
         let rawState = localStorage.getItem('school_attendance_system_state');
         let state;
         try {
@@ -1050,6 +1067,7 @@ function doGet(e) {
             state = JSON.parse(JSON.stringify(defaultState));
         }
 
+        // تهيئة المتغيرات المؤقتة
         state.activeRole = 'teacher';
         state.isOnline = true;
         state.gpsStatus = 'inside';
@@ -1060,37 +1078,45 @@ function doGet(e) {
             localStorage.setItem('school_attendance_system_state', JSON.stringify(state));
         }
 
-        // مطهرات ذكية لتنظيف صيغ التواريخ والأوقات المعقدة فوراً قبل عرضها بالواجهة
+        // مطهرات ومصفيات ذكية لتنظيف صياغات الوقت من جوجل ومنع صيغ 1899 وتعديل فروق التوقيت
         function sanitizeLoadedDate(dateVal) {
-            if (!dateVal) return "";
-            const str = String(dateVal).trim();
-            if (str.includes('T')) {
-                const dateObj = new Date(str);
-                if (!isNaN(dateObj.getTime())) {
-                    const y = dateObj.getFullYear();
-                    const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-                    const d = dateObj.getDate().toString().padStart(2, '0');
-                    return `${y}-${m}-${d}`;
+            try {
+                if (!dateVal) return "";
+                const str = String(dateVal).trim();
+                if (str.includes('T')) {
+                    const dateObj = new Date(str);
+                    if (!isNaN(dateObj.getTime())) {
+                        const y = dateObj.getFullYear();
+                        const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                        const d = dateObj.getDate().toString().padStart(2, '0');
+                        return `${y}-${m}-${d}`;
+                    }
                 }
+                return str;
+            } catch(e) {
+                return String(dateVal);
             }
-            return str;
         }
 
         function sanitizeLoadedTime(timeVal) {
-            if (!timeVal) return "";
-            const str = String(timeVal).trim();
-            if (str.includes('T')) {
-                const dateObj = new Date(str);
-                if (!isNaN(dateObj.getTime())) {
-                    let hours = dateObj.getHours();
-                    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-                    const ampm = hours >= 12 ? 'م' : 'ص';
-                    hours = hours % 12;
-                    hours = hours ? hours : 12;
-                    return `${hours}:${minutes} ${ampm}`;
+            try {
+                if (!timeVal) return "";
+                const str = String(timeVal).trim();
+                if (str.includes('T')) {
+                    const dateObj = new Date(str);
+                    if (!isNaN(dateObj.getTime())) {
+                        let hours = dateObj.getHours();
+                        const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+                        const ampm = hours >= 12 ? 'م' : 'ص';
+                        hours = hours % 12;
+                        hours = hours ? hours : 12;
+                        return `${hours}:${minutes} ${ampm}`;
+                    }
                 }
+                return str;
+            } catch(e) {
+                return String(timeVal);
             }
-            return str;
         }
 
         function convertArabicNumerals(str) {
@@ -1114,6 +1140,8 @@ function doGet(e) {
             }, 1200);
         }
 
+        // STREAMING_CHUNK: Setting up coordinate configurations... -->
+        // محاذاة وشحن واجهة المستخدم عند التحميل المباشر
         window.onload = function() {
             try {
                 SCHOOL_LAT = state.schoolLocation.lat;
@@ -1127,36 +1155,17 @@ function doGet(e) {
 
                 if (state.googleSheetUrl) {
                     syncWithGoogleSheet();
-                } else {
-                    fetch('staff.json')
-                        .then(response => { if (response.ok) return response.json(); throw new Error('No staff.json'); })
-                        .then(data => {
-                            if (data && data.staff) {
-                                state.staff = data.staff;
-                                state.schoolLocation = data.schoolLocation || state.schoolLocation;
-                                state.timings = data.timings || state.timings;
-                                
-                                SCHOOL_LAT = state.schoolLocation.lat;
-                                SCHOOL_LNG = state.schoolLocation.lng;
-                                SCHOOL_RADIUS = state.schoolLocation.radius;
-                                
-                                saveState();
-                                updateTeacherPortalLocationUI();
-                                renderAdminDashboard();
-                                showToast("✨ تم تحديث بيانات المعلمات المحلية بنجاح!", "success");
-                            }
-                        })
-                        .catch(err => console.log("Offline mode active.", err));
                 }
 
-                if(document.getElementById('config-checkin-start')) document.getElementById('config-checkin-start').value = state.timings.checkInStart;
-                if(document.getElementById('config-checkin-late')) document.getElementById('config-checkin-late').value = state.timings.checkInLate;
-                if(document.getElementById('config-checkout')) document.getElementById('config-checkout').value = state.timings.checkOutTime;
+                // الحماية من فقدان التوجيه لبعض حقول التهيئة وتلافي التجميد
+                if (document.getElementById('config-checkin-start')) document.getElementById('config-checkin-start').value = state.timings.checkInStart;
+                if (document.getElementById('config-checkin-late')) document.getElementById('config-checkin-late').value = state.timings.checkInLate;
+                if (document.getElementById('config-checkout')) document.getElementById('config-checkout').value = state.timings.checkOutTime;
 
-                if(document.getElementById('config-school-lat')) document.getElementById('config-school-lat').value = state.schoolLocation.lat;
-                if(document.getElementById('config-school-lng')) document.getElementById('config-school-lng').value = state.schoolLocation.lng;
-                if(document.getElementById('config-school-radius')) document.getElementById('config-school-radius').value = state.schoolLocation.radius;
-                if(document.getElementById('config-sheet-url')) document.getElementById('config-sheet-url').value = state.googleSheetUrl || '';
+                if (document.getElementById('config-school-lat')) document.getElementById('config-school-lat').value = state.schoolLocation.lat;
+                if (document.getElementById('config-school-lng')) document.getElementById('config-school-lng').value = state.schoolLocation.lng;
+                if (document.getElementById('config-school-radius')) document.getElementById('config-school-radius').value = state.schoolLocation.radius;
+                if (document.getElementById('config-sheet-url')) document.getElementById('config-sheet-url').value = state.googleSheetUrl || '';
 
                 updateMobileClock();
                 setInterval(updateMobileClock, 1000);
@@ -1172,20 +1181,24 @@ function doGet(e) {
                 const todayStr = new Date().toISOString().split('T')[0];
                 if (document.getElementById('report-date-start')) document.getElementById('report-date-start').value = todayStr;
                 if (document.getElementById('report-date-end')) document.getElementById('report-date-end').value = todayStr;
-            } catch(e) {
-                console.error("onload caught safe:", e);
+            } catch (error) {
+                console.error("Safely caught crash in window.onload:", error);
             }
         };
 
+        // STREAMING_CHUNK: Implementing Google Sheet synchronization logic... -->
+        // محاكاة سحب ومزامنة البيانات من جوجل (GET-only لضمان عبور CORS)
         function syncWithGoogleSheet() {
             if (!state.googleSheetUrl) return;
 
             const url = `${state.googleSheetUrl}?action=getData`;
+
+            // إتاحة الاتصال مؤقتاً كـ Placeholder
             updateGoogleSheetSyncUI(true);
 
             fetch(url, { method: 'GET', redirect: 'follow' })
                 .then(response => {
-                    if(!response.ok) throw new Error("HTTP error " + response.status);
+                    if (!response.ok) throw new Error("HTTP error " + response.status);
                     return response.json();
                 })
                 .then(data => {
@@ -1210,9 +1223,10 @@ function doGet(e) {
                         renderAdminDashboard();
                         updateGoogleSheetSyncUI(true);
                         showToast("🟢 تم مزامنة البيانات وتحديث الحركات والمنسوبات من جداول جوجل بنجاح!", "success");
-                    } else if (data && data.success === false) {
+                    } else {
                         updateGoogleSheetSyncUI(false);
-                        showToast(`🛑 خطأ سحابي: ${data.error}`, "warning");
+                        const errMsg = (data && data.error) ? data.error : "استجابة خاطئة من الخادم السحابي";
+                        showToast(`🛑 خطأ سحابي: ${errMsg}`, "warning");
                     }
                 })
                 .catch(err => {
@@ -1222,6 +1236,7 @@ function doGet(e) {
                 });
         }
 
+        // اختبار الاتصال وإعطاء استجابة فورية سريعة
         function testGoogleSheetConnection() {
             const urlInput = document.getElementById('config-sheet-url').value.trim();
             if (!urlInput) {
@@ -1239,10 +1254,8 @@ function doGet(e) {
                         state.googleSheetUrl = urlInput;
                         saveState();
                         syncWithGoogleSheet();
-                    } else if (data && data.success === false) {
-                        showToast(`🛑 فشل الاتصال: ${data.error}`, "warning");
                     } else {
-                        showToast("⚠️ استجاب الخادم ولكن بتنسيق غير صحيح؛ تأكدي من صحة كود Apps Script المرفوع.", "warning");
+                        showToast(`🛑 فشل الاتصال: ${data.error || 'استجابة معطوبة'}`, "warning");
                     }
                 })
                 .catch(err => {
@@ -1265,6 +1278,7 @@ function doGet(e) {
             }
         }
 
+        // STREAMING_CHUNK: Managing sync icons... -->
         function updateGoogleSheetSyncUI(isConnected = null) {
             const statusBadge = document.getElementById('sheet-conn-status');
             const headerBadge = document.getElementById('header-sync-status');
@@ -1287,7 +1301,7 @@ function doGet(e) {
                 }
                 if(headerBadge) {
                     headerBadge.className = "text-[10px] bg-red-600/20 text-red-100 border border-red-500/30 px-2 py-1 rounded-full font-semibold flex items-center gap-1";
-                    headerBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> <span>محلي (وضع التجربة)</span>`;
+                    headerBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> <span>محلي (غير متصل بجوجل)</span>`;
                 }
             }
         }
@@ -1379,6 +1393,7 @@ function doGet(e) {
             }
         }
 
+        // STREAMING_CHUNK: Adding helper tools for database... -->
         function downloadStaffDatabaseFile() {
             const payload = {
                 staff: state.staff,
@@ -1396,7 +1411,7 @@ function doGet(e) {
             link.click();
             document.body.removeChild(link);
             
-            showToast("📥 تم تحميل ملف 'staff.json' بنجاح. قومي برفع هذا الملف إلى مستودع GitHub الخاص بكِ ليتم تحديث كافة أجهزة المعلمات تلقائياً وبأمان!", "success");
+            showToast("📥 تم تحميل ملف 'staff.json' بنجاح. قم برفع الملف الجديد ومستبدلاً القديم به.", "success");
         }
 
         function updateSimulatedTimePreset() {
@@ -1486,6 +1501,7 @@ function doGet(e) {
             document.getElementById('excel-file-input').click();
         }
 
+        // STREAMING_CHUNK: Processing Excel import... -->
         function handleExcelImport(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1541,7 +1557,7 @@ function doGet(e) {
                     
                 } catch (error) {
                     console.error(error);
-                    showToast("❌ حدث خطأ أثناء تحليل ملف الإكسل؛ يرجى التأكد من سلامة صياغته وترميزه.", "warning");
+                    showToast("❌ حدث خطأ أثناء تحليل ملف الإكسل； يرجى التأكد من سلامة صياغته وترميزه.", "warning");
                 }
                 resetExcelInputLabel();
             };
@@ -1596,7 +1612,7 @@ function doGet(e) {
                         console.error(err);
                         delete state.staff[id];
                         saveState();
-                        showToast(`🗑️ تم الحذف محلياً؛ واجهنا مشكلة اتصال سحابي بالخادم.`, "warning");
+                        showToast(`🗑️ تم الحذف محلياً； واجهنا مشكلة اتصال سحابي بالخادم.`, "warning");
                         closeConfirmModal();
                         renderAdminDashboard();
                     });
@@ -1713,6 +1729,7 @@ function doGet(e) {
             return actualTotal - targetTotal;
         }
 
+        // STREAMING_CHUNK: Processing check-in operations... -->
         function handleCheckIn(actionType) {
             const rawIdInput = document.getElementById('teacher-id-input').value.trim();
             const responseBox = document.getElementById('mobile-response');
@@ -1882,6 +1899,7 @@ function doGet(e) {
             document.getElementById('admin-login-modal').classList.add('hidden');
         }
 
+        // STREAMING_CHUNK: Managing administrative settings and panels... -->
         function submitAdminLogin() {
             const pin = document.getElementById('admin-password-input').value.trim();
             
@@ -1897,7 +1915,7 @@ function doGet(e) {
         function saveAdminPassword() {
             const newPin = document.getElementById('config-admin-password').value.trim();
             if (!newPin) {
-                showToast("⚠️ يرجى إدخل رمز سري صالح وغير فارغ!", "warning");
+                showToast("⚠️ يرجى إدخال رمز سري صالح وغير فارغ!", "warning");
                 return;
             }
             if (newPin.length < 4) {
@@ -2066,6 +2084,7 @@ function doGet(e) {
             }
         }
 
+        // STREAMING_CHUNK: Updating the dashboard lists... -->
         function renderAdminDashboard() {
             try {
                 const totalCountEl = document.getElementById('total-staff-count');
@@ -2199,6 +2218,7 @@ function doGet(e) {
                     }
                 }
 
+                // STREAMING_CHUNK: Formatting attendance database tables... -->
                 const tableBody = document.getElementById('attendance-feed-table');
                 if (tableBody) {
                     tableBody.innerHTML = '';
@@ -2353,6 +2373,7 @@ function doGet(e) {
             }
         }
 
+        // STREAMING_CHUNK: Submitting manual administrative check-in... -->
         function submitManualCheckIn() {
             const staffId = document.getElementById('modal-staff-id').value;
             const actionType = document.getElementById('modal-action-type').value;
@@ -2450,37 +2471,18 @@ function doGet(e) {
                 "التاريخ": r.date,
                 "الوقت": r.time,
                 "نوع الحركة": r.action,
-                "طريقة التحضير": r.method,
+                "طريقة التحضر": r.method,
                 "حالة الحركة": r.status,
                 "السبب الإداري والملاحظات": r.reason
             }));
             const wsMovements = XLSX.utils.json_to_sheet(movementsData.length ? movementsData : [{ "ملاحظة": "لم تسجل أي حركات اليوم" }]);
             XLSX.utils.book_append_sheet(wb, wsMovements, "مسير الحركات اللحظي");
 
-            const todayAttendance = state.attendance.filter(r => r.date === todayStr);
-            const presentIds = new Set(todayAttendance.filter(r => r.action === 'حضور').map(r => r.id));
-            const absentList = [];
-            
-            for (const id in state.staff) {
-                const member = state.staff[id];
-                if (member.type === 'contract' || (member.type === 'permanent' && state.emergencyMode)) {
-                    if (!presentIds.has(member.id)) {
-                        absentList.push({
-                            "السجل المدني": member.id,
-                            "الاسم بالكامل": member.name,
-                            "الفئة الإدارية": member.type === 'contract' ? 'بند عقود' : 'رسمي (طوارئ)',
-                            "حالة الدوام": "غائبة (لم ترصد حضور اليوم)"
-                        });
-                    }
-                }
-            }
-            const wsAbsent = XLSX.utils.json_to_sheet(absentList.length ? absentList : [{ "ملاحظة": "لا توجد غيابات مسجلة لليوم" }]);
-            XLSX.utils.book_append_sheet(wb, wsAbsent, "كشف الغياب اليومي");
-
             XLSX.writeFile(wb, `تقرير_حضور_المنسوبات_الشامل_${todayStr}.xlsx`);
-            showToast("📊 تم بناء وتنزيل تقرير Excel متعدد الصفحات بنجاح!", "success");
+            showToast("📊 تم بناء وتنزيل تقرير Excel بنجاح!", "success");
         }
 
+        // STREAMING_CHUNK: Printing PDF report formats... -->
         function exportToPDF() {
             const todayStr = new Date().toISOString().split('T')[0];
             const presentCount = document.getElementById('stat-present').innerText;
@@ -2501,7 +2503,7 @@ function doGet(e) {
                                 <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${absentIndex++}</td>
                                 <td style="padding: 8px; border: 1px solid #cbd5e1;">${member.name}</td>
                                 <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${member.id}</td>
-                                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${member.type === 'contract' ? 'بند عقود' : 'رسمي (طوارئ)'}</td>
+                                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${member.type === 'contract' ? 'بند عقود' : 'رسمي'}</td>
                                 <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; color: #ef4444; font-weight: bold;">غائبة</td>
                             </tr>
                         `;
@@ -2546,6 +2548,9 @@ function doGet(e) {
                         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
                         th { background-color: #f1f5f9; font-size: 11px; padding: 8px; border: 1px solid #cbd5e1; }
                         td { font-size: 11px; padding: 8px; border: 1px solid #cbd5e1; }
+                        .signatures-container { margin-top: 50px; display: flex; justify-content: space-between; }
+                        .signature-box { width: 40%; text-align: center; font-size: 12px; font-weight: bold; }
+                        .signature-line { height: 40px; margin-top: 10px; border-bottom: 1px dashed #cbd5e1; }
                     </style>
                 </head>
                 <body>
@@ -2612,6 +2617,18 @@ function doGet(e) {
                             ${allMovementsHTML}
                         </tbody>
                     </table>
+
+                    <div class="signatures-container">
+                        <div class="signature-box">
+                            <span>وكيلة المدرسة الموقرة</span>
+                            <div class="signature-line"></div>
+                            <span style="font-size: 10px; color: #64748b; font-weight: normal;">الأستاذة فوزية عبدالله الغامدي</span>
+                        </div>
+                        <div class="signature-box">
+                            <span>مديرة المدرسة الفاضلة</span>
+                            <div class="signature-line"></div>
+                        </div>
+                    </div>
                 </body>
                 </html>
             `);
@@ -2653,6 +2670,7 @@ function doGet(e) {
 
         let lastGeneratedReportData = [];
 
+        // STREAMING_CHUNK: Filtering report queries... -->
         function generateCustomReport() {
             const reportType = document.getElementById('report-type-select').value;
             const startStr = document.getElementById('report-date-start').value;
@@ -2772,6 +2790,7 @@ function doGet(e) {
             showToast("📊 تم تصدير وبناء تقرير Excel المصفى بنجاح!", "success");
         }
 
+        // STREAMING_CHUNK: Printing report outputs to PDF... -->
         function exportReportToPDF() {
             if (lastGeneratedReportData.length === 0) {
                 showToast("⚠️ يرجى النقر على زر 'توليد ومعاينة التقرير' أولاً!", "warning");
@@ -2803,15 +2822,35 @@ function doGet(e) {
                     <title>التقرير الاستقصائي المصفى لحضور المنسوبات</title>
                     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
                     <style>
-                        body { font-family: 'Cairo', sans-serif; direction: rtl; padding: 30px; }
+                        body { font-family: 'Cairo', sans-serif; direction: rtl; padding: 30px; color: #1e293b; }
+                        .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px double #1e293b; padding-bottom: 15px; margin-bottom: 25px; }
+                        .school-info { font-size: 11px; line-height: 1.6; }
+                        .report-title-box { text-align: center; }
+                        .report-title-box h1 { font-size: 18px; margin: 0; font-weight: 800; }
                         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
                         th { background-color: #f1f5f9; font-size: 11px; padding: 8px; border: 1px solid #cbd5e1; }
                         td { font-size: 11px; padding: 8px; border: 1px solid #cbd5e1; }
+                        .signatures-container { margin-top: 50px; display: flex; justify-content: space-between; }
+                        .signature-box { width: 40%; text-align: center; font-size: 12px; font-weight: bold; }
+                        .signature-line { height: 40px; margin-top: 10px; border-bottom: 1px dashed #cbd5e1; }
                     </style>
                 </head>
                 <body>
-                    <h2 style="text-align: center;">التقرير المصفى لحضور وانصراف منسوبات المدرسة</h2>
-                    <p style="text-align: center;">من تاريخ: ${startStr} إلى تاريخ: ${endStr}</p>
+                    <div class="header-container">
+                        <div class="school-info">
+                            <strong>المملكة العربية السعودية</strong><br>
+                            وزارة التعليم<br>
+                            إدارة التعليم بمحافظة القريات<br>
+                            الابتدائية الثامنة و العشرون بالقريات
+                        </div>
+                        <div class="report-title-box">
+                            <h1>التقرير الاستقصائي المصفى لحضور المنسوبات</h1>
+                            <p>من تاريخ: ${startStr} إلى تاريخ: ${endStr}</p>
+                        </div>
+                        <div class="school-info" style="text-align: left;">
+                            تاريخ رصد التقرير: <strong>${new Date().toLocaleDateString('ar-SA')}</strong>
+                        </div>
+                    </div>
                     <table>
                         <thead>
                             <tr>
@@ -2829,6 +2868,17 @@ function doGet(e) {
                             ${rowsHTML}
                         </tbody>
                     </table>
+                    <div class="signatures-container">
+                        <div class="signature-box">
+                            <span>وكيلة المدرسة الموقرة</span>
+                            <div class="signature-line"></div>
+                            <span style="font-size: 10px; color: #64748b; font-weight: normal;">الأستاذة فوزية عبدالله الغامدي</span>
+                        </div>
+                        <div class="signature-box">
+                            <span>مديرة المدرسة الفاضلة</span>
+                            <div class="signature-line"></div>
+                        </div>
+                    </div>
                 </body>
                 </html>
             `);
